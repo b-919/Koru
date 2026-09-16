@@ -1,15 +1,23 @@
 apply plugin: "java"
 
-sourceCompatibility = 1.8
+java {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 sourceSets.main.java.srcDirs = [ "src/" ]
 
 project.ext.mainClassName = "io.anuke.koru.desktop.DesktopLauncher"
-project.ext.assetsDir = new File("../core/assets");
+project.ext.assetsDir = new File("../core/assets")
 
 def PACKR_DIR = "$System.env.PACKR_DIR"
 
 task run(dependsOn: classes, type: JavaExec) {
-    main = project.mainClassName
+    mainClass = project.mainClassName
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
     workingDir = project.assetsDir
@@ -17,7 +25,7 @@ task run(dependsOn: classes, type: JavaExec) {
 }
 
 task debug(dependsOn: classes, type: JavaExec) {
-    main = project.mainClassName
+    mainClass = project.mainClassName
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
     workingDir = project.assetsDir
@@ -26,11 +34,12 @@ task debug(dependsOn: classes, type: JavaExec) {
 }
 
 task dist(type: Jar) {
-    from files(sourceSets.main.output.classesDir)
-    from files(sourceSets.main.output.resourcesDir)
-    from {configurations.compile.collect {zipTree(it)}}
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from sourceSets.main.output
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     from files(project.assetsDir);
- 
+
     manifest {
         attributes 'Main-Class': project.mainClassName
     }
@@ -71,18 +80,18 @@ task packrCmd(type: Exec) {
 		from "build/libs/desktop-1.0.jar"
 	}
 
-	commandLine "java", "-jar", PACKR_DIR+"packr.jar", "--verbose", /*"--resources", project.ext.assetsDir,*/ "--platform", getPlatform(), "--executable", appName, "--output", "packr-out/", "--mainclass", project.ext.mainClassName, "--jdk", PACKR_DIR+"jdk-"+getPlatform()+".zip", "--classpath", 
+	commandLine "java", "-jar", PACKR_DIR+"packr.jar", "--verbose", /*"--resources", project.ext.assetsDir,*/ "--platform", getPlatform(), "--executable", appName, "--output", "packr-out/", "--mainclass", project.ext.mainClassName, "--jdk", PACKR_DIR+"jdk-"+getPlatform()+".zip", "--classpath",
 		"--", PACKR_DIR+"config.json"
-	
+
 }
 
 task packrZip(type: Zip) {
 	dependsOn "packrCmd"
 	finalizedBy "clearOut"
-	
+
     from "packr-out/"
-    archiveName appName + "-" + getPlatform() + ".zip"
-    destinationDir(file("packr-export"))
+    archiveFileName = appName + "-" + getPlatform() + ".zip"
+    destinationDirectory = file("packr-export")
 }
 
 eclipse {
