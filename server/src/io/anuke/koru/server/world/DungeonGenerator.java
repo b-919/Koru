@@ -1,7 +1,7 @@
 package io.anuke.koru.server.world;
 
-import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.utils.Queue;
+import arc.math.geom.Point2;
+import arc.struct.Queue;
 
 import io.anuke.koru.modules.World;
 import io.anuke.koru.world.Chunk;
@@ -9,9 +9,9 @@ import io.anuke.koru.world.StructureGenerator;
 import io.anuke.koru.world.materials.Material;
 import io.anuke.koru.world.materials.Materials;
 import io.anuke.koru.world.materials.StructMaterials;
-import io.anuke.ucore.util.Geometry;
-import io.anuke.ucore.util.GridMap;
-import io.anuke.ucore.util.Mathf;
+import arc.math.geom.Geometry;
+import arc.struct.GridMap;
+import arc.math.Mathf;
 
 public class DungeonGenerator extends StructureGenerator{
 	int roomSpacing = 13;
@@ -49,7 +49,7 @@ public class DungeonGenerator extends StructureGenerator{
 				
 				int di = 0;
 				
-				for(GridPoint2 direction : Geometry.getD4Points()){
+				for(Point2 direction : Geometry.getD4Points()){
 					Room near = map.get(point.x + direction.x, point.y + direction.y);
 					if(near == null &&
 							(Mathf.chance(roomChance) || (points.size == 0 && rooms < minRooms))){
@@ -87,9 +87,9 @@ public class DungeonGenerator extends StructureGenerator{
 		int midy = chunk.worldY() + World.chunksize/2 + gridy * roomSpacing;
 		int hsize = passageSize/2;
 		
-		GridPoint2 point = Geometry.getD4Points()[direction];
-		GridPoint2 left = Geometry.getD4Points()[Mathf.mod(direction - 1, 4)];
-		GridPoint2 right = Geometry.getD4Points()[Mathf.mod(direction + 1, 4)];
+		Point2 point = Geometry.getD4Points()[direction];
+		Point2 left = Geometry.getD4Points()[Mathf.mod(direction - 1, 4)];
+		Point2 right = Geometry.getD4Points()[Mathf.mod(direction + 1, 4)];
 		
 		for(int i = 0; i < roomSpacing; i ++){
 			if(Math.abs(i - roomSpacing / 2) < roomSize/2){
@@ -166,7 +166,7 @@ public class DungeonGenerator extends StructureGenerator{
 		}
 	}
 	
-	class Room extends GridPoint2{
+	class Room extends Point2{
 		boolean[] connected = new boolean[4];
 		
 		public Room(int x, int y){

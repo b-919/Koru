@@ -3,23 +3,19 @@ package io.anuke.koru.graphics.lsystems;
 import java.util.HashMap;
 import java.util.function.Consumer;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ObjectMap;
+import arc.graphics.Color;
+import arc.struct.Seq;
+import arc.struct.ObjectMap;
+import arc.math.Mathf;
 
 import io.anuke.koru.graphics.Evaluators;
-import io.anuke.ucore.graphics.Hue;
-import io.anuke.ucore.lsystem.EvolutionData;
-import io.anuke.ucore.lsystem.Evolver;
-import io.anuke.ucore.lsystem.LSystemData;
-import io.anuke.ucore.util.Mathf;
 
 public class LSystems{
 	public static final int variants = 8;
 	private static final Evolver evolver = new Evolver();
 	private static final Color leafColor = Color.valueOf("366d2d");
 	private static final Color trunkColor = Color.valueOf("96572a");
-	private static final Array<KoruLSystem> systems = new Array<>();
+	private static final Seq<KoruLSystem> systems = new Seq<>();
 	
 	private static final String shrub = "{X=[[+[-XF][X]-XXFF+]-[FF]X][F-]-F, F=F}";
 	private static final String olive = "{X=[+[+[FX-[F+[FX]X]-XXF]]]XX-F, F=F}";
@@ -47,14 +43,14 @@ public class LSystems{
 		map.clear();
 		
 		EvolutionData bush = new EvolutionData();
-		bush.eval = Evaluators.leafcount;
+		bush.eval = (IEvaluator)Evaluators.leafcount;
 		bush.generations = 20;
 		bush.swayscale = 18f;
 		bush.swayphase = 4f;
 		bush.swayspace = 1f;
 		bush.changeSpace = false;
 		bush.defaultSpace = 17f;
-		bush.start = bush.end = Hue.mix(Color.BROWN, Color.WHITE, 0.1f);
+		bush.start = bush.end = Color.brown.cpy().lerp(Color.white, 0.1f);
 		bush.thickness = 2f;
 		bush.defaultRules.put('F', "F");
 		
@@ -69,7 +65,7 @@ public class LSystems{
 		evolveType("sapling", sapling, trunkColor, leafColor);
 		evolveType("deadbush", deadbush, Color.valueOf("7c4c3d"), Color.valueOf("7c9b39"));
 		evolveType("droopy", droopy, Color.valueOf("5a3628"), Color.valueOf("386a3e"));
-		set("droopy", k -> k.getData().thickness = 2f);
+		set("droopy", k -> k.data.thickness = 2f);
 	}
 	
 	private static void set(String type, Consumer<KoruLSystem> cons){

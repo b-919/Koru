@@ -1,63 +1,85 @@
 package io.anuke.koru.entities.types;
 
-import com.badlogic.gdx.math.MathUtils;
+import io.anuke.koru.graphics.Draw;
+import arc.math.Mathf;
+import arc.util.Time;
+import arc.util.Tmp;
 
-import io.anuke.koru.entities.Prototypes;
+import io.anuke.koru.entities.Entities;
+import io.anuke.koru.entities.Entity;
+import io.anuke.koru.graphics.Drawf;
 import io.anuke.koru.items.ItemStack;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.network.SyncType;
-import io.anuke.koru.traits.ItemTrait;
-import io.anuke.koru.traits.SyncTrait;
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.ecs.Prototype;
-import io.anuke.ucore.ecs.Spark;
-import io.anuke.ucore.ecs.TraitList;
-import io.anuke.ucore.ecs.extend.traits.FacetTrait;
-import io.anuke.ucore.ecs.extend.traits.PosTrait;
-import io.anuke.ucore.ecs.extend.traits.VelocityTrait;
+import io.anuke.koru.network.syncing.Interpolator;
 
-public class ItemDrop extends Prototype{
+public class ItemDrop extends Entity{
+
+	{
+		hasVelocity = true;
+		drag = 0.1f;
+
+		syncType = SyncType.position;
+		interpolator = new Interpolator();
+	}
 
 	@Override
-	public TraitList traits(){
-		return new TraitList(
-			new PosTrait(), 
-			new FacetTrait((trait, spark)->{
-				if(Net.server()) return;
-				
-				String itemname = spark.get(ItemTrait.class).stack.item.name();
-				String region = Draw.hasRegion(itemname + "chunk") ? itemname + "chunk" : itemname + "item";
-				
-				trait.draw(p->{
-					p.layer = spark.pos().y;
-					
-					Draw.grect(region, spark.pos().x, spark.pos().y-2);
+	public void update(){
+		super.update();
+
+		//magnetic pickup, server-side only
+		if(!Net.server()) return;
+
+		Entities.instance.getNearby(pos().x, pos().y, 30,
+				other -> other.inventory != null && !other.inventory.full(),
+				(other) -> {
+					float height = 3f;
+					float dst = other.pos().dst(pos().x, pos().y - height);
+
+					if(dst > 2f){
+						velocity.add(Tmp.v1.set(other.pos().x - pos().x,
+								other.pos().y - (pos().y - height)).nor().scl(0.2f * Time.delta));
+					}
+
+					if(dst < 2f){
+						other.inventory.addItem(stack);
+						other.inventory.sendUpdate(other);
+						Entities.remove(this);
+						// TODO Effects.effect(Fx.itempickup, pos().x, pos().y - 0.5f); once Effects subsystem ported
+					}
 				});
-				
-				trait.drawShadow(spark, 6, 0);
-			}),
-			new SyncTrait(SyncType.position),
-			new ItemTrait(), 
-			new VelocityTrait(0.1f)
-		);
 	}
-	
+
+	@Override
+	public void draw(){
+		if(Net.server()) return;
+
+		String itemname = stack.item.name();
+		String region = Drawf.hasRegion(itemname + "chunk") ? itemname + "chunk" : itemname + "item";
+
+		Draw.z(pos().y);
+
+		Draw.rect(region, pos().x, pos().y - 2);
+
+		Drawf.shadow(this, 6, 0);
+	}
+
 	public static void create(float x, float y, ItemStack[] stacks){
 		int stepsize = 5;
 		float range = 5;
-		
+
 		for(ItemStack stack : stacks){
-			
+
 			int amount = stack.amount;
 			while(amount >= 0){
-				Spark item = new Spark(Prototypes.itemDrop);
-				item.get(ItemTrait.class).stack = new ItemStack(stack.item, amount > stepsize ? stepsize : amount);
-				item.pos().set(x + MathUtils.random(-range,range), y + MathUtils.random(-range,range));
+				ItemDrop item = new ItemDrop();
+				item.stack = new ItemStack(stack.item, amount > stepsize ? stepsize : amount);
+				item.pos().set(x + Mathf.random(-range, range), y + Mathf.random(-range, range));
 				amount -= stepsize;
-				
-				Net.sendSpark(item.add());
+
+				item.add();
+				Net.sendEntity(item);
 			}
 		}
-		
 	}
 }

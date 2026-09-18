@@ -1,13 +1,8 @@
 package io.anuke.koru.graphics;
 
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Array;
+import arc.math.Mathf;
 
 import io.anuke.koru.world.materials.MaterialTypes.Wall;
-import io.anuke.ucore.core.Core;
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.core.Graphics;
-import io.anuke.ucore.facet.*;
 
 public class KoruFacetLayers{
 	public static final float waterLayer = 2;
@@ -17,7 +12,7 @@ public class KoruFacetLayers{
 	water = new FacetLayer("water", waterLayer, 0){
 		
 		{
-			Graphics.addSurface("reflection", Core.cameraScale, 3);
+			Graphics.addSurface("reflection", 4, 3);
 		}
 		
 		@Override
@@ -27,7 +22,7 @@ public class KoruFacetLayers{
 		
 		@Override
 		public boolean layerEquals(float f){
-			return MathUtils.isEqual(f, layer, 2f);
+			return Mathf.equal(f, layer, 2f);
 		}
 		
 		@Override
@@ -38,7 +33,7 @@ public class KoruFacetLayers{
 			Shaders.mix.amount = 0.42f;
 			Graphics.shader(Shaders.mix);
 			
-			Array<Facet> facets = Facets.instance().getFacetArray();
+			arc.struct.Seq<Facet> facets = Facets.instance().getFacetArray();
 			for(int i = 0; i < facets.size; i ++){
 				Facet facet = facets.get(i);
 				
@@ -58,11 +53,11 @@ public class KoruFacetLayers{
 					if(k.material instanceof Wall){
 						iswall = true;
 						Wall wall = (Wall)k.material;
-						pheight = k.sprite.getRegionHeight();
-						py = k.sprite.getRegionY();
-						k.sprite.setRegionY(k.sprite.getRegionY() + (k.sprite.getRegionHeight() - wall.height));
-						k.sprite.setRegionHeight(wall.height);
-						k.sprite.setSize(k.sprite.getWidth(), wall.height);
+						// pheight = k.sprite.getRegionHeight();
+						// py = k.sprite.getRegionY();
+						// k.sprite.setRegionY(k.sprite.getRegionY() + (k.sprite.getRegionHeight() - wall.height));
+						// k.sprite.setRegionHeight(wall.height);
+						// k.sprite.setSize(k.sprite.getWidth(), wall.height);
 						
 					}
 				}
@@ -71,18 +66,18 @@ public class KoruFacetLayers{
 				
 				//TODO facet lags behind in Y axis while moving?
 				
-				Core.batch.getTransformMatrix().setToTranslation(0, facet.getLayer(), 0);
-				Core.batch.getTransformMatrix().scale(1f, -1f, 0);
-				Core.batch.getTransformMatrix().translate(0, -facet.getLayer(), 0);
+				// arc.Core.batch.getTransformMatrix().setToTranslation(0, facet.getLayer(), 0);
+				// arc.Core.batch.getTransformMatrix().scale(1f, -1f, 0);
+				// arc.Core.batch.getTransformMatrix().translate(0, -facet.getLayer(), 0);
 				
 				Graphics.begin();
 				facet.draw();
 				
 				if(iswall){
 					KoruFacet k = (KoruFacet)facet;
-					k.sprite.setRegionY(py);
-					k.sprite.setRegionHeight(pheight);
-					k.sprite.setSize(k.sprite.getWidth(), pheight);
+					// k.sprite.setRegionY(py);
+					// k.sprite.setRegionHeight(pheight);
+					// k.sprite.setSize(k.sprite.getWidth(), pheight);
 				
 				}
 			}
@@ -90,7 +85,7 @@ public class KoruFacetLayers{
 			Graphics.end();
 			Graphics.shader();
 			
-			Core.batch.getTransformMatrix().setToTranslation(0, 0, 0);
+			// arc.Core.batch.getTransformMatrix().setToTranslation(0, 0, 0);
 			Graphics.begin();
 			
 			Graphics.shader(Shaders.water);

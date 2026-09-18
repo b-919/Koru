@@ -1,7 +1,16 @@
 {
-    paddingX: 2,
-    paddingY: 2,
-    edgePadding: true,
-	duplicatePadding: true,
-	combineSubdirectories: true
+	combineSubdirectories: true,
+	flattenPaths: false,
+	maxWidth: 2048,
+	maxHeight: 2048,
+	pot: true,
+	paddingX: 2,
+	paddingY: 2,
+	bleed: true,
+	bleedIterations: 2,
+	alias: true,
+	ignoreBlankImages: true,
+	filterMin: "nearest",
+	filterMag: "nearest",
+	atlasExtension: ".atlas"
 }

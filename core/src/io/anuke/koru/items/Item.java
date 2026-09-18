@@ -2,16 +2,16 @@ package io.anuke.koru.items;
 
 import java.util.EnumSet;
 
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ObjectIntMap;
+import arc.struct.Seq;
+import arc.struct.ObjectIntMap;
 
 import io.anuke.koru.input.InputHandler.ClickEvent;
 import io.anuke.koru.world.BreakType;
-import io.anuke.ucore.util.Strings;
+import arc.util.Strings;
 
 public class Item{
 	private static int lastid;
-	private static Array<Item> items = new Array<Item>();
+	private static Seq<Item> items = new Seq<Item>();
 	
 	private final String name;
 	private final EnumSet<ItemType> types;

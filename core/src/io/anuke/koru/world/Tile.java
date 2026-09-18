@@ -2,15 +2,15 @@ package io.anuke.koru.world;
 
 import java.util.Arrays;
 
-import com.badlogic.gdx.utils.Pool.Poolable;
+import arc.util.pooling.Pool.Poolable;
 
 import io.anuke.koru.modules.World;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.world.materials.Material;
 import io.anuke.koru.world.materials.MaterialLayer;
 import io.anuke.koru.world.materials.Materials;
-import io.anuke.ucore.util.Bits;
-import io.anuke.ucore.util.Mathf;
+import io.anuke.koru.utils.Bits;
+import arc.math.Mathf;
 
 public class Tile implements Poolable{
 	public static final int LAYER_SIZE = 10;
@@ -19,7 +19,7 @@ public class Tile implements Poolable{
 	public byte light = (byte)127;
 	/**top floor id*/
 	public byte top = 0;
-	/**floor ID array*/
+	/**floor ID Seq*/
 	public short[] floors;
 	/**wall block ID*/
 	public short wallid;
@@ -151,7 +151,7 @@ public class Tile implements Poolable{
 	}
 	
 	public long getSeed(){
-		return Bits.packLong(x, y);
+		return io.anuke.koru.utils.Bits.packInt(x, y);
 	}
 
 	@Override
@@ -164,3 +164,5 @@ public class Tile implements Poolable{
 		Arrays.fill(floors, (short)0);
 	}
 }
+
+

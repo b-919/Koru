@@ -1,12 +1,11 @@
 package io.anuke.koru.graphics;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
+import arc.Core;
+import arc.graphics.Color;
 
-import io.anuke.ucore.core.Core;
-import io.anuke.ucore.core.Timers;
-import io.anuke.ucore.graphics.Shader;
-import io.anuke.ucore.util.Tmp;
+import arc.util.Time;
+// Use local Shader class
+import io.anuke.koru.graphics.Shader;
 
 public class Shaders{
 	public static final Outline outline = new Outline();
@@ -24,9 +23,9 @@ public class Shaders{
 
 		@Override
 		public void apply(){
-			shader.setUniformf("camerapos", Core.camera.position.x, Core.camera.position.y);
-			shader.setUniformf("screensize", Gdx.graphics.getWidth() / Core.cameraScale, Gdx.graphics.getHeight() / Core.cameraScale);
-			shader.setUniformf("time", Timers.time());
+			setUniformf("camerapos", Core.camera.position.x, Core.camera.position.y);
+			setUniformf("screensize", Core.graphics.getWidth() / 4f, Core.graphics.getHeight() / 4f);
+			setUniformf("time", arc.util.Time.time);
 		}
 	}
 	
@@ -64,13 +63,13 @@ public class Shaders{
 
 		@Override
 		public void apply(){
-			shader.setUniformf("tint", color);
-			shader.setUniformf("amount", amount);
+			setUniformf("tint", color.r, color.g, color.b, color.a);
+			setUniformf("amount", amount);
 		}
 	}
 	
 	public static class Outline extends Shader{
-		public Color color = Color.WHITE;
+		public Color color = Color.white;
 		
 		public Outline(){
 			super("outline", "outline");
@@ -78,13 +77,13 @@ public class Shaders{
 
 		@Override
 		public void apply(){
-			shader.setUniformf("u_texsize", Tmp.v1.set(region.getTexture().getWidth(), region.getTexture().getHeight()));
-			shader.setUniformf("u_color", color);
+			setUniformf("u_texsize", region.texture.width, region.texture.height);
+			setUniformf("u_color", color.r, color.g, color.b, color.a);
 		}
 	}
 	
 	public static class Inline extends Shader{
-		public Color color = Color.WHITE;
+		public Color color = Color.white;
 		
 		public Inline(){
 			super("inline", "outline");
@@ -92,10 +91,12 @@ public class Shaders{
 
 		@Override
 		public void apply(){
-			shader.setUniformf("u_texsize", Tmp.v1.set(region.getTexture().getWidth(), region.getTexture().getHeight()));
-			shader.setUniformf("u_size", Tmp.v1.set(region.getRegionWidth(), region.getRegionHeight()));
-			shader.setUniformf("u_pos", Tmp.v1.set(region.getRegionX(), region.getRegionY()));
-			shader.setUniformf("u_color", color);
+			setUniformf("u_texsize", region.texture.width, region.texture.height);
+			setUniformf("u_size", region.width, region.height);
+			setUniformf("u_pos", region.u * region.texture.width, region.v * region.texture.height);
+			setUniformf("u_color", color.r, color.g, color.b, color.a);
 		}
 	}
 }
+
+

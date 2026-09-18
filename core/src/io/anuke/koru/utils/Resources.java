@@ -1,15 +1,16 @@
 package io.anuke.koru.utils;
 
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.utils.Json;
+import static arc.Core.*;
+import arc.graphics.g2d.Font;
+import arc.util.serialization.Json;
 
 import io.anuke.koru.items.impl.BlockRecipes;
 import io.anuke.koru.items.impl.Recipes;
 import io.anuke.koru.world.materials.Materials;
-import io.anuke.ucore.core.Core;
 
 public class Resources{
 	private static Json json;
+	private static Font font;
 	
 	public static void loadData(){
 		Materials.load();
@@ -17,20 +18,24 @@ public class Resources{
 		Recipes.load();
 	}
 	
-	public static BitmapFont font(){
-		return Core.font;
+	public static Font font(){
+		if(font == null){
+			font = new arc.graphics.g2d.Font(
+					arc.Core.files.internal("fonts/font.fnt"));
+		}
+		return font;
 	}
 	
-	public static BitmapFont font2(){
-		return Core.skin.getFont("pixel-font-noborder");
+	public static Font font2(){
+		return io.anuke.koru.Koru.skin.getFont("pixel-font-noborder");
 	}
 	
-	public static BitmapFont font3(){
-		return Core.skin.getFont("pixel-font");
+	public static Font font3(){
+		return io.anuke.koru.Koru.skin.getFont("pixel-font");
 	}
 	
-	public static BitmapFont font(String name){
-		return Core.skin.getFont(name);
+	public static Font font(String name){
+		return io.anuke.koru.Koru.skin.getFont(name);
 	}
 	
 	public static Json getJson(){
@@ -38,3 +43,5 @@ public class Resources{
 		return json;
 	}
 }
+
+

@@ -1,6 +1,6 @@
 package io.anuke.koru.world;
 
-import com.badlogic.gdx.math.Vector2;
+import arc.math.geom.Vec2;
 
 import io.anuke.koru.Koru;
 
@@ -41,7 +41,7 @@ public class Physics{
 		return false;
 	}
 
-	public static Vector2 vectorCast(float x0f, float y0f, float x1f, float y1f){
+	public static Vec2 vectorCast(float x0f, float y0f, float x1f, float y1f){
 		int x0 = (int)x0f;
 		int y0 = (int)y0f;
 		int x1 = (int)x1f;
@@ -57,7 +57,7 @@ public class Physics{
 		while(true){
 
 			if(solid(x0, y0)){
-				return new Vector2(x0, y0);
+				return new Vec2(x0, y0);
 			}
 			if(x0 == x1 && y0 == y1) break;
 

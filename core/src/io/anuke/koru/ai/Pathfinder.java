@@ -1,6 +1,6 @@
 package io.anuke.koru.ai;
 
-import com.badlogic.gdx.ai.pfa.indexed.IndexedAStarPathFinder;
+import io.anuke.koru.ai.IndexedAStarPathFinder;
 
 public class Pathfinder{
 	static ManhattanDistanceHueristic heuristic = new ManhattanDistanceHueristic();

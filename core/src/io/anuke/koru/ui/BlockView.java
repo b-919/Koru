@@ -1,9 +1,11 @@
 package io.anuke.koru.ui;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.utils.Align;
+import arc.Core;
+import arc.func.Prov;
+import arc.graphics.Color;
+import arc.graphics.g2d.Batch;
+import arc.graphics.g2d.TextureRegion;
+import arc.util.Align;
 
 import io.anuke.koru.Koru;
 import io.anuke.koru.items.BlockRecipe;
@@ -14,11 +16,12 @@ import io.anuke.koru.traits.InventoryTrait;
 import io.anuke.koru.utils.Resources;
 import io.anuke.koru.world.materials.Material;
 import io.anuke.koru.world.materials.MaterialLayer;
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.function.StringSupplier;
-import io.anuke.ucore.scene.Element;
-import io.anuke.ucore.scene.ui.layout.Table;
-import io.anuke.ucore.scene.utils.ClickListener;
+import io.anuke.koru.graphics.Draw;
+import arc.scene.Element;
+import arc.scene.ui.layout.Table;
+import arc.scene.event.ClickListener;
+import arc.scene.event.InputEvent;
+import arc.scene.style.Drawable;
 
 public class BlockView extends Table{
 	final int slotsize = 64;
@@ -28,11 +31,11 @@ public class BlockView extends Table{
 	
 	public BlockView(){
 		
-		add((StringSupplier)()->(selected == null ? "" : selected.recipe.result().formalName()));
+		label(() -> (selected == null ? "" : selected.recipe.result().formalName()));
 		row();
 		add(req).size(64);
 		
-		row().padTop(32);
+		row();
 		
 		Table blocks = new Table();
 		
@@ -41,36 +44,39 @@ public class BlockView extends Table{
 			blocks.add(slot).size(slotsize);
 		}
 		
-		add(blocks);
+		add(blocks).padTop(32);
 		
-		background("button-window-bg");
-		pad(2);
+		background(Skin.instance.get("button-window-bg", Drawable.class));
+		margin(2);
 	}
 	
 	class Requirement extends Element{
 		ItemStack[] stacks;
-		
-		public void draw(Batch batch, float alpha){
-			patch("slot");
+
+		@Override
+		public void draw(){
+			float alpha = parentAlpha;
+			Batch batch = Core.batch;
+			Skin.instance.get("slot", Drawable.class).draw(x, y, width, height);
 			
 			if(stacks == null) return;
 			
-			InventoryTrait inv = Koru.control.player.get(InventoryTrait.class);
+			InventoryTrait inv = Koru.control.player.inventory;
 			
 			for(int i = 0; i < stacks.length; i ++){
 				TextureRegion region = Draw.region(stacks[i].item.name() + "item");
-				float w = region.getRegionWidth()*pscale, h = region.getRegionHeight()*pscale;
-				float x = getX() + getWidth()/2 - region.getRegionWidth()/2*pscale - (stacks.length-1)*8*pscale + i*16*pscale, 
-						y = getY()+2*pscale;
+				float w = region.width*pscale, h = region.height*pscale;
+				float x = this.x + width/2 - region.width/2*pscale - (stacks.length-1)*8*pscale + i*16*pscale, 
+						y = this.y+2*pscale;
 				
-				batch.draw(region, x, y, w, h);
+				Draw.rect(region, x + w/2, y + h/2, w, h);
 				
 				int amount = Math.min(inv.getAmountOf(stacks[i].item), stacks[i].amount);
-				Resources.font2().setColor(amount < stacks[i].amount ? new Color(1f,0.4f,0.4f,1f) : Color.WHITE);
+				Resources.font2().setColor(amount < stacks[i].amount ? new Color(1f, 0.4f, 0.4f, 1f) : Color.white);
 				
-				Resources.font2().draw(batch, amount + "/" + stacks[i].amount, x-2, y + 20, 0, Align.bottomLeft, false);
+				Resources.font2().draw(amount + "/" + stacks[i].amount, x-2, y + 20, 0, Align.bottomLeft, false);
 				
-				Resources.font2().setColor(Color.WHITE);
+				Resources.font2().setColor(Color.white);
 			}
 		}
 		
@@ -88,35 +94,43 @@ public class BlockView extends Table{
 			this.index = index;
 			this.recipe = recipe;
 			
-			click = clicked(()->{
-				selected = Slot.this;
-				req.set(recipe.requirements());
-					
-				Koru.control.player.get(InventoryTrait.class).recipe = index;
-					
-				RecipeSelectPacket packet = new RecipeSelectPacket();
-				packet.recipe = index;
-				Net.send(packet);
+			addListener(click = new ClickListener(){
+				@Override
+				public void clicked(InputEvent event, float x, float y){
+					selected = Slot.this;
+					req.set(recipe.requirements());
+						
+					Koru.control.player.inventory.recipe = index;
+						
+					RecipeSelectPacket packet = new RecipeSelectPacket();
+					packet.recipe = index;
+					Net.send(packet);
+				}
 			});
 
 		}
 
-		public void draw(Batch batch, float alpha){
-			Draw.color(getColor());
-			patch(Koru.control.player.get(InventoryTrait.class).recipe == index ? "slotset" : (click.isOver() ? "slotselect2" : "slot2"));
+		@Override
+		public void draw(){
+			float alpha = parentAlpha;
+			Batch batch = Core.batch;
+			Draw.color(color);
+			Skin.instance.get(Koru.control.player.inventory.recipe == index ? "slotset" : (click.isOver() ? "slotselect2" : "slot2"), Drawable.class).draw(x, y, width, height);
 			
 			Material result = recipe.result();
 			TextureRegion region = Draw.region(result.name());
 			
-			float w = region.getRegionWidth()*pscale,h = region.getRegionHeight()*pscale;
+			float w = region.width*pscale, h = region.height*pscale;
 			
 			if(result.layer() == MaterialLayer.floor){
-				batch.draw(region, getX() + getWidth()/2-region.getRegionWidth()*pscale/2, getY() + getHeight()/2-region.getRegionHeight()*pscale/2, w,h);
+				Draw.rect(region, x + width/2, y + height/2, w, h);
 			}else{
-				batch.draw(region, getX() + getWidth()/2-region.getRegionWidth()*pscale/2, 4*pscale+ getY() + getHeight()/2-region.getRegionHeight()*pscale/2, w,h);
+				Draw.rect(region, x + width/2, 4*pscale+ y + height/2, w, h);
 			}
 			
 			Draw.reset();
 		}
 	}
 }
+
+

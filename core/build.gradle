@@ -1,8 +1,11 @@
 apply plugin: "java-library"
 
 java {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 17
+    targetCompatibility = 17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -14,11 +17,11 @@ sourceSets.main.java.srcDirs = [ "src/" ]
 def TEXPACK_DIR = "$System.env.TEXPACK_DIR"
 
 task packSprites(type: Exec){
-	commandLine "java", "-cp", TEXPACK_DIR, "com.badlogic.gdx.tools.texturepacker.TexturePacker", "assets-raw/sprites/", "assets/sprites/", "sprites.atlas"
+	commandLine "java", "-cp", TEXPACK_DIR, "arc.packer.TexturePacker", "assets-raw/sprites/", "assets/sprites/", "sprites"
 }
 
 task packUI(type: Exec){
-	commandLine "java", "-cp", TEXPACK_DIR, "com.badlogic.gdx.tools.texturepacker.TexturePacker", "assets-raw/ui/", "assets/ui/", "uiskin.atlas"
+	commandLine "java", "-cp", TEXPACK_DIR, "arc.packer.TexturePacker", "assets-raw/ui/", "assets/ui/", "uiskin"
 }
 
 task pack(){

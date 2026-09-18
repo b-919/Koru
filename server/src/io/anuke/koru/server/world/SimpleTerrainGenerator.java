@@ -1,18 +1,17 @@
 package io.anuke.koru.server.world;
 
-import static io.anuke.ucore.util.Mathf.clamp;
+import static arc.math.Mathf.clamp;
 
 import io.anuke.koru.world.Generator;
 import io.anuke.koru.world.Tile;
 import io.anuke.koru.world.materials.Materials;
-import io.anuke.ucore.noise.Noise;
-import io.anuke.ucore.noise.RidgedPerlin;
-import io.anuke.ucore.noise.VoronoiNoise;
+import arc.util.noise.Noise;
+import arc.util.noise.VoronoiNoise;
 
 public class SimpleTerrainGenerator implements Generator{
 	final float scale = 0.9f;
-	VoronoiNoise tnoise = new VoronoiNoise(0, (short) 0);
-	VoronoiNoise enoise = new VoronoiNoise(10, (short) 0);
+	VoronoiNoise tnoise = new VoronoiNoise(0, false);
+	VoronoiNoise enoise = new VoronoiNoise(10, false);
 	RidgedPerlin per = new RidgedPerlin(2, 1, 0.4f);
 	RidgedPerlin cper = new RidgedPerlin(3, 1, 0.4f);
 
@@ -194,7 +193,7 @@ public class SimpleTerrainGenerator implements Generator{
 
 		elevation /= 0.84;
 
-		elevation = clamp(elevation);
+		elevation = clamp((float) elevation);
 
 		return (float) elevation;
 
@@ -233,7 +232,7 @@ public class SimpleTerrainGenerator implements Generator{
 
 		temp /= 1.05;
 
-		temp = clamp(temp);
+		temp = clamp((float) temp);
 
 		return (float) temp;
 	}
@@ -253,7 +252,7 @@ public class SimpleTerrainGenerator implements Generator{
 
 		out /= 1.05;
 
-		out = clamp(out);
+		out = clamp((float) out);
 
 		return (float) out;
 	}
@@ -273,7 +272,7 @@ public class SimpleTerrainGenerator implements Generator{
 
 		out /= 1.05;
 
-		out = clamp(out);
+		out = clamp((float) out);
 
 		return (float) out;
 	}
@@ -282,3 +281,5 @@ public class SimpleTerrainGenerator implements Generator{
 		return Math.random();
 	}
 }
+
+

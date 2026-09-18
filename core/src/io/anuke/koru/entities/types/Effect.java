@@ -1,45 +1,48 @@
 package io.anuke.koru.entities.types;
 
-import com.badlogic.gdx.graphics.Color;
+import arc.graphics.Color;
 
-import io.anuke.koru.entities.Prototypes;
-import io.anuke.koru.traits.EffectTrait;
-import io.anuke.ucore.core.Effects;
-import io.anuke.ucore.ecs.Prototype;
-import io.anuke.ucore.ecs.Spark;
-import io.anuke.ucore.ecs.TraitList;
-import io.anuke.ucore.ecs.extend.traits.FacetTrait;
-import io.anuke.ucore.ecs.extend.traits.LifetimeTrait;
-import io.anuke.ucore.ecs.extend.traits.PosTrait;
+import io.anuke.koru.entities.Entity;
+import io.anuke.koru.network.Net;
 
-public class Effect extends Prototype{
+public class Effect extends Entity{
+
+	{
+		hasLifetime = true;
+	}
+
+	public int effectId;
+	public float effectRotation;
+	public Color effectColor = Color.white;
 
 	@Override
-	public TraitList traits(){
-		return new TraitList(
-			new PosTrait(),
-			new EffectTrait(),
-			new LifetimeTrait(),
-			new FacetTrait((trait, spark)->{
-				trait.draw(d->{
-					d.layer = spark.pos().y;
-					EffectTrait effect = spark.get(EffectTrait.class);
-					Effects.renderEffect(spark.getID(), Effects.getEffect(effect.id), 
-							effect.color, spark.life().life, effect.rotation, spark.pos().x, spark.pos().y);
-				});
-			})
-		);
+	protected void onAdd(){
+		if(Net.server()){
+			throw new IllegalArgumentException("Effect entities should not be added serverside!");
+		}
+
+		// TODO: lifetime = Effects.getEffect(effectId).lifetime; once the Effects subsystem is ported.
 	}
-	
-	public static Spark create(io.anuke.ucore.core.Effects.Effect effect, Color color, float x, float y){
-		return create(effect, color, x, y, 0);
+
+	@Override
+	public void draw(){
+		// TODO: Effects.renderEffect(id, getEffect(effectId), effectColor, life, effectRotation, x, y);
 	}
-	
-	public static Spark create(io.anuke.ucore.core.Effects.Effect effect, Color color, float x, float y, float rotation){
-		Spark spark = new Spark(Prototypes.effect);
-		spark.get(EffectTrait.class).id = effect.id;
-		spark.get(EffectTrait.class).color = color;
-		spark.pos().set(x, y);
-		return spark;
+
+	/** Creates an effect entity without adding it to the container.
+	  *  Used by the server to send effect packets without owning the entity. */
+	public static Effect create(int effectId, Color color, float x, float y){
+		return create(effectId, color, x, y, 0);
+	}
+
+	public static Effect create(int effectId, Color color, float x, float y, float rotation){
+		Effect effect = new Effect();
+		effect.effectId = effectId;
+		effect.effectColor = color;
+		effect.effectRotation = rotation;
+		effect.pos.set(x, y);
+		return effect;
 	}
 }
+
+

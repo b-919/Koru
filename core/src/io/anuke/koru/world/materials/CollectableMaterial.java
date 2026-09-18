@@ -1,8 +1,7 @@
 package io.anuke.koru.world.materials;
 
-import io.anuke.koru.traits.InventoryTrait;
+import io.anuke.koru.entities.Entity;
 import io.anuke.koru.world.Tile;
-import io.anuke.ucore.ecs.Spark;
 
 /**A material that is collected on interaction*/
 public abstract class CollectableMaterial extends Material{
@@ -11,12 +10,12 @@ public abstract class CollectableMaterial extends Material{
 		super(name, type);
 		interactable = true;
 	}
-	
+
 	@Override
-	public void onInteract(Tile tile, Spark entity){
-		entity.get(InventoryTrait.class).addItems(getDrops());
-		entity.get(InventoryTrait.class).sendUpdate(entity);
-			
+	public void onInteract(Tile tile, Entity entity){
+		entity.inventory.addItems(getDrops());
+		entity.inventory.sendUpdate(entity);
+
 		tile.setWall(Materials.air);
 	}
 }

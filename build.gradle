@@ -5,11 +5,7 @@ allprojects {
     version = '1.0'
     ext {
         appName = "Koru"
-        gdxVersion = '1.9.6'
-        box2DLightsVersion = '1.4'
-        ashleyVersion = '1.7.0'
-        aiVersion = '1.8.0'
-        visuiVersion = '1.2.2'
+        arcVersion = '160.4'
     }
 
     repositories {
@@ -24,9 +20,8 @@ project(":desktop") {
 
     dependencies {
         implementation project(":core")
-        implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
-        implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
-        implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        implementation "com.github.Anuken.Arc:backend-sdl:$arcVersion"
+        implementation "com.github.Anuken.Arc:natives-desktop:$arcVersion"
     }
 }
 
@@ -35,7 +30,8 @@ project(":server") {
 
     dependencies {
         implementation project(":core")
-        implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+        implementation "com.github.Anuken.Arc:backend-headless:$arcVersion"
+        implementation "com.github.Anuken.Arc:backend-sdl:$arcVersion"
     }
 }
 
@@ -43,14 +39,13 @@ project(":core") {
     apply plugin: "java-library"
 
     dependencies {
-        api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
-        api "com.badlogicgames.gdx:gdx:$gdxVersion"
-        api "com.badlogicgames.gdx:gdx-ai:$aiVersion"
-        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-        api "com.esotericsoftware:kryonet:2.22.0-RC1"
+        api "com.github.Anuken.Arc:arc-core:$arcVersion"
+        api "com.github.Anuken.Arc:freetype:$arcVersion"
+        api "com.github.Anuken.Arc:natives-freetype-desktop:$arcVersion"
+        api "com.github.Anuken.Arc:arcnet:$arcVersion"
 
-        api 'com.github.anuken:gdx-postprocessing:8173fd4bb6'
-        api 'com.github.anuken:ucore:d88bfad'
+        // standalone Kryo for serialization (arcnet doesn't include it by default)
+        api "com.esotericsoftware:kryo:4.0.0"
     }
 }
 

@@ -1,19 +1,13 @@
 package io.anuke.koru.traits;
 
-import io.anuke.koru.network.syncing.SyncData.Synced;
-import io.anuke.ucore.ecs.Trait;
+public class DirectionTrait{
 
-@Synced
-public class DirectionTrait extends Trait{
-	public Direction direction = Direction.front;
-	public transient float walktime;
-	public transient boolean walking;
-	
-	public void setOrdinal(int i){
-		direction = Direction.values()[i];
-	}
-	
 	public static enum Direction{
-		right, front, left, back
+		right, front, left, back;
+
+		public static Direction forOrdinal(int ordinal){
+			Direction[] values = Direction.values();
+			return values[(ordinal + values.length) % values.length];
+		}
 	}
 }

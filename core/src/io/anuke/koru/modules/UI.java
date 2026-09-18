@@ -1,23 +1,21 @@
 package io.anuke.koru.modules;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.utils.ObjectMap;
+import arc.Core;
+import arc.struct.ObjectMap;
 
 import io.anuke.koru.Koru;
 import io.anuke.koru.graphics.KoruCursors;
+import io.anuke.koru.items.ItemStack;
 import io.anuke.koru.items.ItemType;
 import io.anuke.koru.modules.Control.GameState;
 import io.anuke.koru.traits.InventoryTrait;
 import io.anuke.koru.ui.*;
-import io.anuke.ucore.core.Inputs;
-import io.anuke.ucore.core.Timers;
-import io.anuke.ucore.function.VisibilityProvider;
-import io.anuke.ucore.modules.SceneModule;
-import io.anuke.ucore.scene.builders.*;
-import io.anuke.ucore.scene.ui.*;
-import io.anuke.ucore.scene.ui.layout.Stack;
-import io.anuke.ucore.scene.ui.layout.Value;
-import io.anuke.ucore.scene.utils.Cursors;
+import arc.func.Boolp;
+import arc.scene.style.Drawable;
+import arc.scene.ui.*;
+import arc.scene.ui.layout.*;
+import arc.util.Time;
+import static arc.Core.*;
 
 public class UI extends SceneModule{
 	private ObjectMap<Class<?>, Menu> menus = new ObjectMap<>();
@@ -26,34 +24,28 @@ public class UI extends SceneModule{
 	private ChatView chat;
 	private TextDialog error;
 	private ConnectDialog connect;
-	private KeybindDialog keybinds;
+	private io.anuke.koru.ui.KeybindDialog keybinds;
 	private SettingsDialog settings;
 	
 	private InventoryView inventory;
 	private BlockView blockrecipes;
 	private RecipeView recipes;
 	
-	private VisibilityProvider titlevis = ()->Koru.control.isState(GameState.title);
-	private VisibilityProvider playvis = ()->Koru.control.isPlaying();
+	private Boolp titlevis = ()->Koru.control.isState(GameState.title);
+	private Boolp playvis = ()->Koru.control.isPlaying();
 
 	public UI(){
-		skin = StyleLoader.loadStyles();
-		Dialog.closePadR -= 1;
+		Koru.skin = StyleLoader.loadStyles();
 		
-		Inputs.flipProcessors();
-		
-		Cursors.arrow = KoruCursors.loadCursor("cursor");
-		Cursors.hand = KoruCursors.loadCursor("hand");
-		Cursors.ibeam = KoruCursors.loadCursor("ibar");
+		Core.input.addProcessor(scene);
 	}
 	
 	@Override
 	public void init(){
 		error = new TextDialog("Error", "N/A");
-		error.setDialog();
 		connect = new ConnectDialog();
 		settings = new SettingsDialog();
-		keybinds = new KeybindDialog();
+		keybinds = new io.anuke.koru.ui.KeybindDialog();
 		chat = new ChatView();
 		
 		//TODO settings
@@ -63,122 +55,116 @@ public class UI extends SceneModule{
 		
 		//TODO setting to autoshow this
 		
-		Timers.run(6, ()->{
+		Time.run(6, ()->{
 			connect.show();
 		});
 	}
 	
 	void setup(){
-		build.begin();
-		
 		//title menu
-		new table("window-noborder"){{
-			defaults().size(180, 45);
-			
-			new button("Connect", ()->{
-				connect.show();
-			});
-			
-			row();
-			
-			new button("Settings", ()->{
-				settings.show();
-			});
-			
-			row();
-			
-			new button("Controls", ()->{
-				keybinds.show();
-			});
-		}}.end().visible(titlevis);
+		Table titleTable = new Table(Skin.instance.get("window-noborder", Drawable.class));
+		titleTable.setFillParent(true);
+		titleTable.defaults().size(180, 45);
+		
+		titleTable.button("Connect", connect::show);
+		titleTable.row();
+		titleTable.button("Settings", settings::show);
+		titleTable.row();
+		titleTable.button("Controls", keybinds::show);
+		
+		titleTable.visible(titlevis);
+		scene.add(titleTable);
 		
 		//title text
-		new table(){{
-			atop();
-			
-			//TODO fix hacky title
-			
-			new label("[gray]Koru"){{
-				get().setFontScale(4f);
-			}}.padBottom(-124);
-			
-			row();
-			
-			new label("Koru"){{
-				get().setFontScale(4f);
-			}};
-			
-		}}.end().visible(titlevis);
+		Table titleTextTable = new Table();
+		titleTextTable.setFillParent(true);
+		titleTextTable.top();
+		
+		Label titleLabelGray = new Label("[gray]Koru");
+		titleLabelGray.setFontScale(4f);
+		titleTextTable.add(titleLabelGray).padBottom(-124);
+		titleTextTable.row();
+		
+		Label titleLabel = new Label("Koru");
+		titleLabel.setFontScale(4f);
+		titleTextTable.add(titleLabel);
+		
+		titleTextTable.visible(titlevis);
+		this.scene.add(titleTextTable);
 		
 		//inventory
-		new table(){{
-			abottom();
-			aright();
-			
-			add(inventory = new InventoryView());
-		}}.end().visible(playvis);
+		Table invTable = new Table();
+		invTable.setFillParent(true);
+		invTable.bottom().right();
+		
+		inventory = new InventoryView();
+		invTable.add(inventory);
+		
+		invTable.visible(playvis);
+		this.scene.add(invTable);
 		
 		//recipes
-		new table(){{
-			visible(()->Koru.control.player.get(InventoryTrait.class).hotbarStack().isType(ItemType.placer));
-			aleft();
-			
-		}}.end().visible(playvis);
+		Table recipeTable = new Table();
+		recipeTable.setFillParent(true);
+		recipeTable.left();
+		
+		recipeTable.visible(() -> {
+			ItemStack stack = Koru.control.player == null ? null : Koru.control.player.inventory.hotbarStack();
+			return playvis.get() && stack != null && stack.isType(ItemType.placer);
+		});
+		this.scene.add(recipeTable);
 		
 		//debug
-		new table(){{
-			atop();
-			aright();
-			new label(()->Gdx.graphics.getFramesPerSecond() + " FPS");
-		}}.end().visible(playvis);
+		Table debugTable = new Table();
+		debugTable.setFillParent(true);
+		debugTable.top().right();
+		debugTable.label(() -> Core.graphics.getFramesPerSecond() + " FPS");
+		
+		debugTable.visible(playvis);
+		this.scene.add(debugTable);
 		
 		//crafting
-		new table(){{
-			atop();
-			aleft();
-			
-			blockrecipes = new BlockView();
-			recipes = new RecipeView();
-			
-			new table("button-window-bg"){{
-				get().pad(4);
-				ButtonGroup<TextButton> group = new ButtonGroup<>();
-				
-				Stack stack = new Stack();
-				
-				group.add(new button("Blocks", "toggle", ()->{
-					stack.invalidateHierarchy();
-				}).fillX().uniformX().get());
-				
-				group.add(new button("Recipes", "toggle", ()->{
-					stack.invalidateHierarchy();
-				}).fillX().uniformX().get());
-				
-				stack.add(blockrecipes);
-				blockrecipes.setVisible(()->group.getCheckedIndex() == 0);
-				
-				stack.add(recipes);
-				recipes.setVisible(()->group.getCheckedIndex() == 1);
-				
-				row();
-				
-				add(stack).colspan(group.getButtons().size)
-				.height(Value.create(()->group.getCheckedIndex() == 0 ? 
-						blockrecipes.getPrefHeight() : recipes.getPrefHeight()));
-				
-			}}.end();
-			
-			
-			row();
-			//add(recipes = new PlaceMenu());
-			
-		}}.end().visible(playvis);
+		Table craftTable = new Table();
+		craftTable.setFillParent(true);
+		craftTable.top().left();
+		
+		blockrecipes = new BlockView();
+		recipes = new RecipeView();
+		
+		Table craftSubTable = new Table(Skin.instance.get("button-window-bg", Drawable.class));
+		craftSubTable.margin(4);
+		
+		ButtonGroup<Button> group = new ButtonGroup<>();
+		Stack stack = new Stack();
+		
+		Button blocksBtn = craftSubTable.button("Blocks", () -> {
+			stack.invalidateHierarchy();
+		}).fillX().uniformX().get();
+		group.add(blocksBtn);
+		
+		Button recipesBtn = craftSubTable.button("Recipes", () -> {
+			stack.invalidateHierarchy();
+		}).fillX().uniformX().get();
+		group.add(recipesBtn);
+		
+		stack.add(blockrecipes);
+		blockrecipes.visible(() -> group.getCheckedIndex() == 0);
+		
+		stack.add(recipes);
+		recipes.visible(() -> group.getCheckedIndex() == 1);
+		
+		craftSubTable.row();
+		craftSubTable.add(stack).colspan(group.getButtons().size);
+		//.height(() -> group.getCheckedIndex() == 0 ? blockrecipes.getPrefHeight() : recipes.getPrefHeight());
+		
+		craftTable.add(craftSubTable);
+		craftTable.visible(playvis);
+		this.scene.add(craftTable);
 		
 		//chat
-		chat.setVisible(playvis);
+		chat = new ChatView();
+		chat.visible(playvis);
 		scene.add(chat);
-		
-		build.end();
 	}
 	
 	public void toggleChat(){
@@ -200,7 +186,7 @@ public class UI extends SceneModule{
 	}
 	
 	public boolean menuOpen(){
-		return hasMouse() || currentMenu != null || chat.chatOpen();
+		return scene.hasMouse() || currentMenu != null || chat.chatOpen();
 	}
 	
 	public void showError(String... lines){
@@ -236,3 +222,5 @@ public class UI extends SceneModule{
 		}
 	}
 }
+
+

@@ -2,10 +2,10 @@ package io.anuke.koru.world.materials;
 
 import java.util.ArrayList;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
+import arc.graphics.Color;
+import arc.math.geom.Rect;
+import arc.math.geom.Vec3;
+import arc.struct.Seq;
 
 import io.anuke.koru.items.Item;
 import io.anuke.koru.items.ItemStack;
@@ -13,9 +13,9 @@ import io.anuke.koru.modules.World;
 import io.anuke.koru.traits.InventoryTrait;
 import io.anuke.koru.world.BreakType;
 import io.anuke.koru.world.Tile;
-import io.anuke.ucore.ecs.Spark;
-import io.anuke.ucore.facet.FacetList;
-import io.anuke.ucore.util.Strings;
+import io.anuke.koru.entities.Entity;
+import io.anuke.koru.graphics.FacetList;
+import arc.util.Strings;
 				
 public abstract class Material{
 	private static ArrayList<Material> materials = new ArrayList<Material>();
@@ -26,8 +26,8 @@ public abstract class Material{
 	protected final MaterialLayer layer;
 	protected String formalName;
 	
-	protected Vector3 foilageTint = new Vector3(1f, 1f, 1f);
-	protected Color color = Color.CLEAR;
+	protected Vec3 foilageTint = new Vec3(1f, 1f, 1f);
+	protected Color color = Color.clear;
 	
 	protected float offset = 0;
 	protected float[] offsets;
@@ -36,11 +36,11 @@ public abstract class Material{
 	
 	protected boolean interactable = false;
 	protected int breaktime;
-	protected Array<ItemStack> drops = new Array<ItemStack>();
+	protected Seq<ItemStack> drops = new Seq<ItemStack>();
 	protected BreakType breaktype = BreakType.stone;
 	
 	protected boolean solid;
-	protected Rectangle hitbox = new Rectangle(0, 0, World.tilesize, World.tilesize);
+	protected Rect hitbox = new Rect(0, 0, World.tilesize, World.tilesize);
 	
 	public static Material getMaterial(int id){
 		return materials.get(id);
@@ -64,14 +64,18 @@ public abstract class Material{
 	}
 	
 	public abstract void draw(Tile tile, FacetList list);
+
+	/** Draws without a facet list for entity-based rendering (e.g. BlockAnimation).
+	 *  Facet-driven materials render via {@link #draw(Tile, FacetList)} instead. */
+	public void draw(Tile tile){};
 	
 	public void changeEvent(Tile tile){}
 	
-	//collect the block be default
-	public void onInteract(Tile tile, Spark spark){
-		spark.get(InventoryTrait.class).addItems(tile.wall().getDrops());
-		spark.get(InventoryTrait.class).sendUpdate(spark);
-			
+	//collect the block by default
+	public void onInteract(Tile tile, Entity entity){
+		entity.inventory.addItems(tile.wall().getDrops());
+		entity.inventory.sendUpdate(entity);
+
 		tile.setWall(Materials.air);
 	}
 	
@@ -88,7 +92,7 @@ public abstract class Material{
 		this.color = color;
 	}
 
-	public Vector3 foilageTint(){
+	public Vec3 foilageTint(){
 		return foilageTint;
 	}
 	
@@ -149,8 +153,8 @@ public abstract class Material{
 		return cullSize;
 	}
 
-	public Rectangle getHitbox(int x, int y, Rectangle rectangle){
-		return rectangle.setSize(hitbox.width, hitbox.height)
+	public Rect getHitbox(int x, int y, Rect Rect){
+		return Rect.setSize(hitbox.width, hitbox.height)
 				.setCenter(hitbox.x + x * World.tilesize, hitbox.y + y * World.tilesize);
 	}
 	

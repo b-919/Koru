@@ -1,10 +1,10 @@
 package io.anuke.koru.graphics;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.utils.ObjectMap;
-
-import io.anuke.ucore.graphics.Pixmaps;
+import arc.Core;
+import arc.graphics.*;
+import arc.Graphics.Cursor;
+import arc.struct.ObjectMap;
+import io.anuke.koru.utils.Pixmaps;
 
 public class KoruCursors{
 	private static ObjectMap<String, Cursor> cursors = new ObjectMap<>();
@@ -18,17 +18,14 @@ public class KoruCursors{
 		Cursor cursor = cursors.get(name);
 		
 		if(cursor == null){
-			Texture texture = new Texture("cursors/"+name+".png");
-			texture.getTextureData().prepare();
-			
-			Pixmap pixmap = texture.getTextureData().consumePixmap();
+			Pixmap pixmap = new Pixmap(Core.files.internal("cursors/"+name+".png"));
 			Pixmap out = Pixmaps.outline(pixmap, new Color(0,0,0,0.1f));
 			Pixmap out2 = Pixmaps.scale(out, 4);
 			
 			out.dispose();
 			pixmap.dispose();
 			
-			cursor = Gdx.graphics.newCursor(out2, out2.getWidth()/2, out2.getHeight()/2);
+			cursor = Core.graphics.newCursor(out2, out2.width/2, out2.height/2);
 			cursors.put(name, cursor);
 		}
 		
@@ -37,7 +34,7 @@ public class KoruCursors{
 	
 	public static void updateCursor(){
 		if(cursor != null){
-			Gdx.graphics.setCursor(loadCursor(cursor));
+			Core.graphics.cursor(loadCursor(cursor));
 		}
 	}
 }

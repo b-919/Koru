@@ -1,83 +1,98 @@
 package io.anuke.koru.entities.types;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.utils.Align;
+import arc.Core;
+import arc.graphics.Color;
+import io.anuke.koru.graphics.Draw;
+import arc.util.Align;
+import arc.util.Time;
 
-import io.anuke.koru.entities.KoruEvents.Unload;
+import io.anuke.koru.entities.Entity;
+import io.anuke.koru.graphics.Drawf;
+import io.anuke.koru.input.InputHandler;
+import io.anuke.koru.network.Net;
 import io.anuke.koru.network.SyncType;
-import io.anuke.koru.traits.*;
+import io.anuke.koru.network.syncing.Interpolator;
 import io.anuke.koru.traits.DirectionTrait.Direction;
+import io.anuke.koru.traits.InventoryTrait;
 import io.anuke.koru.utils.Resources;
-import io.anuke.ucore.core.Core;
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.core.Timers;
-import io.anuke.ucore.ecs.Prototype;
-import io.anuke.ucore.ecs.TraitList;
-import io.anuke.ucore.ecs.extend.traits.*;
 
-public class Player extends Prototype{
-	
-	public Player(){
-		event(Unload.class, ()->{
-			return false;
-		});
+public class Player extends Entity{
+
+	{
+		hasCollider = true;
+		cwidth = 8;
+		cheight = 6;
+
+		chunkLoad = true;
+
+		syncType = SyncType.player;
+		interpolator = new Interpolator();
+
+		inventory = new InventoryTrait(20);
+
+		tileCollides = true;
+		tcolWidth = 4;
+		tcolHeight = 3;
+		tcolOffsetY = 2;
 	}
 
 	@Override
-	public TraitList traits(){
-		return new TraitList(
-			new PosTrait(),
-			new ConnectionTrait(),
-			new FacetTrait((trait, spark)->{
-				
-				trait.draw(l->{
-					l.layer = spark.pos().y + 1f;
-					
-					float x = spark.pos().x;
-					float y = spark.pos().y;
-					
-					spark.pos().x = (int)spark.pos().x;
-					spark.pos().y = (int)spark.pos().y;
-					
-					DirectionTrait dir = spark.get(DirectionTrait.class);
-					
-					Draw.grect("crab-" + (dir.direction == Direction.left || dir.direction == Direction.right ? "s" : dir.direction == Direction.back ? "b" : "f")
-						+(dir.walktime > 0 ? "-"+((int)(dir.walktime/7))%3 : ""), 
-							spark.pos().x, spark.pos().y, dir.direction == Direction.left ? - 12 : 12, 12);
-					
-					//TODO fix ugly font size
-					if(!spark.get(ConnectionTrait.class).local){
-						Resources.font2().setColor(Color.YELLOW);
-						
-						Resources.font2().getData().setScale(1f);
-						Resources.font2().setUseIntegerPositions(false);
-						Resources.font2().draw(Core.batch, spark.get(ConnectionTrait.class).name, spark.pos().x + 0.5f, spark.pos().y + 18, 0, Align.center, false);
-					
-						Resources.font2().setColor(Color.WHITE);
-						
-						if(dir.walking){
-							dir.walktime += Timers.delta();
-						}else{
-							dir.walktime = 0;
-						}
-					}
-					
-					spark.pos().x = x;
-					spark.pos().y = y;
-				});
-				
-				trait.drawShadow(spark, 14, 1, true);
-			}),
-			new ColliderTrait(8, 6),
-			new ChunkLoadTrait(),
-			new SyncTrait(SyncType.player),
-			new InputTrait(),
-			new HealthTrait(),
-			new InventoryTrait(20),
-			new DirectionTrait(),
-			new EquipTrait(),
-			new TileCollideTrait(0, 2, 4, 3)
-		);
+	protected void onAdd(){
+		//server players handle remote input; client players handle only the local player's own input
+		if(input == null && (Net.server() || local)) input = new InputHandler(this);
 	}
 
+	@Override
+	public void update(){
+		super.update();
+
+		if(Net.server() && input != null){
+			input.update(Time.delta);
+		}
+	}
+
+	@Override
+	public boolean unload(){
+		return false;
+	}
+
+	@Override
+	public void draw(){
+		Draw.z(pos().y + 1f);
+
+		float x = pos().x;
+		float y = pos().y;
+
+		pos().x = (int) pos().x;
+		pos().y = (int) pos().y;
+
+		Direction dir = this.direction;
+
+		Draw.rect("crab-" + (dir == Direction.left || dir == Direction.right ? "s" : dir == Direction.back ? "b" : "f")
+				+ (walktime > 0 ? "-" + ((int) (walktime / 7)) % 3 : ""),
+				pos().x, pos().y, dir == Direction.left ? -12 : 12, 12);
+
+		if(!local){
+			Resources.font2().setColor(arc.graphics.Color.yellow);
+
+			Resources.font2().getData().setScale(1f);
+			Resources.font2().setUseIntegerPositions(false);
+			Resources.font2().draw(name, pos().x + 0.5f, pos().y + 18, 0, arc.util.Align.center, false);
+
+			Resources.font2().setColor(arc.graphics.Color.white);
+
+			if(walking){
+				walktime += Time.delta;
+			}else{
+				walktime = 0;
+			}
+		}
+
+		pos().x = x;
+		pos().y = y;
+
+		Drawf.shadow(this, 14, 1, true);
+	}
 }
+
+

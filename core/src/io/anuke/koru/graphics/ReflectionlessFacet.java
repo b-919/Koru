@@ -1,10 +1,11 @@
 package io.anuke.koru.graphics;
 
-import io.anuke.ucore.facet.BaseFacet;
+import io.anuke.koru.graphics.BaseFacet;
+import arc.func.Cons;
 
 public class ReflectionlessFacet extends BaseFacet{
 	
-	public ReflectionlessFacet(float layer, DrawFunc draw){
-		super(layer, draw);
+	public ReflectionlessFacet(float layer, Cons<BaseFacet> draw){
+		super(layer, Sorter.object, draw);
 	}
 }

@@ -1,6 +1,6 @@
 package io.anuke.koru.world.materials;
 
-import com.badlogic.gdx.graphics.Color;
+import arc.graphics.Color;
 
 import io.anuke.koru.items.impl.Items;
 import io.anuke.koru.world.materials.MaterialTypes.Floor;
@@ -66,3 +66,5 @@ public class StructMaterials{
 	
 	public static void load(){}
 }
+
+

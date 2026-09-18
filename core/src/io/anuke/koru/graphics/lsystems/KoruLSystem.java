@@ -1,26 +1,20 @@
 package io.anuke.koru.graphics.lsystems;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.PixmapIO;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.ScreenUtils;
-
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.core.Graphics;
-import io.anuke.ucore.core.Timers;
-import io.anuke.ucore.lsystem.LSystem;
-import io.anuke.ucore.lsystem.LSystemData;
-import io.anuke.ucore.util.Mathf;
+import arc.Core;
+import arc.math.Mathf;
+import arc.math.geom.Vec3;
+import arc.struct.Seq;
+import arc.graphics.g2d.TextureRegion;
+import arc.util.Disposable;
+import arc.util.ScreenUtils;
+import io.anuke.koru.graphics.Draw;
+import arc.util.Time;
 
 public class KoruLSystem extends LSystem implements Disposable{
 	public static final int frames = 20;
 	public static boolean writeOut = false;
-	private Array<Vector3> circles = new Array<>();
+	private Seq<Vec3> circles = new Seq<>();
+	public float timeOffset = 0;
 
 	private boolean drawn = false;
 	private boolean cache = true;
@@ -33,9 +27,9 @@ public class KoruLSystem extends LSystem implements Disposable{
 	
 	public float colorStep = 0.3f;
 	public float trunkHeight = 0f;
-	public Color leafColor;
-	public Color leafColorEnd;
-	public Color lineColor;
+	public arc.graphics.Color leafColor;
+	public arc.graphics.Color leafColorEnd;
+	public arc.graphics.Color lineColor;
 
 	public KoruLSystem(LSystemData data) {
 		super(data);
@@ -70,7 +64,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 	@Override
 	protected void pop(){
 		if(leafColor != null && !drawn)
-			circles.add(new Vector3(lastx, lasty, (float) stack.size() / (maxstack)));
+			circles.add(new Vec3(lastx, lasty, (float) stack.size() / (maxstack)));
 		super.pop();
 	}
 
@@ -79,7 +73,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 		Draw.color(data.start);
 		Draw.rect("treebase", x, y);
 
-		for(Line line : lines){
+		for(LTree.Line line : lines){
 			float s = 1f - (float) line.stack / maxstack;
 
 			Draw.thickness(data.thickness + s * 1f);
@@ -96,15 +90,15 @@ public class KoruLSystem extends LSystem implements Disposable{
 	public void draw(){
 
 		if(!drawn){
-			float phase = MathUtils.PI2 * data.swayphase;
+			float phase = Mathf.PI2 * data.swayphase;
 			regions = new TextureRegion[frames];
 			int boundGrow = 7;
 			float minx = 999,  maxx = -999, maxy = -999;
 			int screenX = 0, screenY = 0, screenWidth = 0, screenHeight = 0;
 			
-			Graphics.setScreen();
-			Graphics.surface("trees");
-			Graphics.clear(Color.CLEAR);
+			//Graphics.setScreen();
+			//Graphics.surface("trees");
+			//Graphics.clear(arc.graphics.Color.clear);
 			
 			for(int i = -1; i < frames; i++){
 				time = (float) Math.max(i, 0) / frames * phase;
@@ -112,14 +106,14 @@ public class KoruLSystem extends LSystem implements Disposable{
 				recache();
 
 				if(i != -1){
-					Graphics.clear(Color.CLEAR);
+					Core.graphics.clear(arc.graphics.Color.clear);
 					
-					float xoff = Gdx.graphics.getWidth()/2;
-					float yoff = Gdx.graphics.getHeight()/2;
+					float xoff = Core.graphics.getWidth()/2;
+					float yoff = Core.graphics.getHeight()/2;
 					Draw.color(data.start);
 					Draw.rect("treebase", 0 + xoff, 0 + yoff);
 
-					for(Line line : lines){
+					for(LTree.Line line : lines){
 						float s = 1f - (float) line.stack / maxstack;
 						
 						Draw.thickness(data.thickness + s * 1f);
@@ -127,10 +121,10 @@ public class KoruLSystem extends LSystem implements Disposable{
 						Draw.line(line.x1 + xoff, line.y1 + yoff, line.x2 + xoff, line.y2 + yoff);
 					}
 
-					for(Vector3 vec : circles){
+					for(Vec3 vec : circles){
 						float rad = 3f + vec.z * 3;
 						if(leafColorEnd != null){
-							Draw.color(leafColor, leafColorEnd, Mathf.round(vec.z, colorStep));
+							Draw.color(leafColor, leafColorEnd, vec.z - (vec.z % colorStep));
 						}else{
 							Draw.color(leafColor);
 						}
@@ -138,16 +132,18 @@ public class KoruLSystem extends LSystem implements Disposable{
 					}
 
 					Draw.color();
-					Graphics.flush();
+					//Graphics.flush();
 					
 					TextureRegion region = ScreenUtils.getFrameBufferTexture(screenX, screenY, screenWidth, screenHeight);
 					regions[i] = region;
 					if(i == 0 && writeOut){
-						PixmapIO.writePNG(Gdx.files.local("trees/tree" + Mathf.random(99999)), ScreenUtils.getFrameBufferPixmap(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+						arc.graphics.Pixmap pixmap = ScreenUtils.getFrameBufferPixmap(0, 0, Core.graphics.getWidth(), Core.graphics.getHeight());
+						arc.graphics.PixmapIO.writePng(Core.files.local("trees/tree" + Mathf.random(99999) + ".png"), pixmap);
+						pixmap.dispose();
 					}
 					
 				}else{
-					for(Line line : lines){
+					for(LTree.Line line : lines){
 						minx = Math.min(line.x1, minx);
 						minx = Math.min(line.x2, minx);
 						
@@ -157,17 +153,17 @@ public class KoruLSystem extends LSystem implements Disposable{
 						maxy = Math.max(line.y2, maxy);
 					}
 					
-					screenX = (int)minx - boundGrow + Gdx.graphics.getWidth()/2;
-					screenY = Gdx.graphics.getHeight()/2 - 2;
+					screenX = (int)minx - boundGrow + Core.graphics.getWidth()/2;
+					screenY = Core.graphics.getHeight()/2 - 2;
 					screenWidth = (int)(maxx - minx) + boundGrow * 2;
 					screenHeight = (int)maxy + boundGrow;
-					offsetx = ((screenX + screenWidth) + screenX)/2 - Gdx.graphics.getWidth()/2;
+					offsetx = ((screenX + screenWidth) + screenX)/2 - Core.graphics.getWidth()/2;
 				}
 			}
 			
-			Graphics.end();
-			Graphics.beginCam();
-			Graphics.surface();
+			//Graphics.end();
+			//Graphics.beginCam();
+			//Graphics.surface();
 
 			drawn = true;
 		}else{
@@ -175,12 +171,13 @@ public class KoruLSystem extends LSystem implements Disposable{
 				throw new RuntimeException("Disposed!");
 			}
 			float time = 100f / data.swayphase;
-			TextureRegion region = regions[(int)((Timers.time() + this.timeOffset) / time) % regions.length];
-			Draw.rect(region, x + offsetx, y + region.getRegionHeight()/2 - 2);
+			TextureRegion region = regions[(int)((Time.time + this.timeOffset) / time) % regions.length];
+			Draw.rect(region, x + offsetx, y + region.height/2 - 2);
 		}
 	}
 
-	private void recache(){
+	@Override
+	protected void recache(){
 		circles.clear();
 		lines.clear();
 
@@ -199,7 +196,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 	public void dispose(){
 		if(regions != null)
 		for(TextureRegion region : regions){
-			region.getTexture().dispose();
+			region.texture.dispose();
 		}
 		regions = null;
 	}

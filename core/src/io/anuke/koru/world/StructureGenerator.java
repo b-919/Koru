@@ -1,6 +1,6 @@
 package io.anuke.koru.world;
 
-import com.badlogic.gdx.utils.Array;
+import arc.struct.Seq;
 
 import io.anuke.koru.Koru;
 import io.anuke.koru.network.Net;
@@ -9,7 +9,7 @@ import io.anuke.koru.world.materials.Material;
 
 public abstract class StructureGenerator{
 	boolean locked = false;
-	Array<Chunk> updated = new Array<>();
+	Seq<Chunk> updated = new Seq<>();
 	Chunk current = null;
 	
 	public void generateChunk(Chunk chunk){
@@ -46,3 +46,5 @@ public abstract class StructureGenerator{
 	
 	protected abstract void generate(Chunk chunk);
 }
+
+

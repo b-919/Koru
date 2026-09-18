@@ -1,10 +1,9 @@
 package io.anuke.koru.graphics;
 
-import com.badlogic.gdx.graphics.Color;
+import arc.graphics.Color;
 
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.core.Effects.Effect;
-import io.anuke.ucore.util.Angles;
+import io.anuke.koru.graphics.Effects.Effect;
+import arc.math.Angles;
 
 public class Fx{
 	public static final Effect
@@ -19,7 +18,7 @@ public class Fx{
 	}),
 
 	blockplace = new Effect(20, e -> {
-		Draw.color(Color.TAN);
+		Draw.color(Color.valueOf("d2b48c"));
 		Angles.randVectors(e.id, 6, 1f + 14f * e.powfract(), (x, y) -> {
 			float rad = 1f + e.fract() * 4f;
 			Draw.rect("circle", x + e.x, y + e.y, rad, rad);
@@ -37,7 +36,7 @@ public class Fx{
 	}),
 
 	itempickup = new Effect(9, e -> {
-		Draw.color(Color.LIGHT_GRAY);
+		Draw.color(Color.lightGray);
 		Angles.randVectors(e.id, 4, 8f * e.fract(), (x, y) -> {
 			float rad = e.sfract() * 4f;
 			Draw.rect("circle", x + e.x, y + e.y, rad, rad);

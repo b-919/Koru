@@ -1,45 +1,49 @@
 package io.anuke.koru.modules;
 
-import static io.anuke.ucore.util.Mathf.inBounds;
+import static arc.math.Mathf.*;
 
 import java.util.Collection;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
+import arc.graphics.Color;
+import arc.math.Mathf;
+import arc.math.geom.Point2;
+import arc.math.geom.Rect;
+import arc.math.geom.Vec2;
+import arc.struct.Seq;
 
 import io.anuke.koru.Koru;
+import io.anuke.koru.entities.Entities;
+import io.anuke.koru.entities.Entity;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.network.Net.Mode;
 import io.anuke.koru.network.packets.ChunkPacket;
 import io.anuke.koru.network.packets.ChunkRequestPacket;
 import io.anuke.koru.network.packets.TileUpdatePacket;
-import io.anuke.koru.traits.ChunkLoadTrait;
 import io.anuke.koru.world.Chunk;
 import io.anuke.koru.world.Tile;
 import io.anuke.koru.world.WorldLoader;
 import io.anuke.koru.world.materials.Material;
 import io.anuke.koru.world.materials.MaterialLayer;
 import io.anuke.koru.world.materials.MaterialTypes.Wall;
-import io.anuke.ucore.core.Core;
-import io.anuke.ucore.core.Timers;
-import io.anuke.ucore.ecs.Spark;
-import io.anuke.ucore.graphics.Hue;
-import io.anuke.ucore.modules.Module;
+import arc.Core;
 
-public class World extends Module{
+import io.anuke.koru.modules.KoruModule;
+import arc.util.Time;
+import arc.util.Timekeeper;
+
+public class World extends KoruModule{
 	public static final int chunksize = 16;
 	public static final int loadrange = 3;
 	public static final int tilesize = 12;
+
+	private static final Timekeeper chunkTimer = Timekeeper.ofTicks(80);
 	
 	private static Color ambientColor = new Color();
 	private static final float[] colors = new float[]{1, 1, 0.9f, 0.5f, 0.2f, 0, 0, 0.5f, 0.9f, 1};
 	public final static float timescale = 40000f*0; //temporarily disabled for testing - remove 0 to enable
 	
 	private boolean updated;
-	private GridPoint2 point = new GridPoint2();
+	private Point2 point = new Point2();
 	private WorldLoader file;
 	private boolean[][] chunkloaded;
 	
@@ -61,6 +65,10 @@ public class World extends Module{
 			tempchunks = new Chunk[loadrange * 2][loadrange * 2];
 		}
 	}
+
+	private boolean inBounds(int x, int y, Object[][] array){
+		return x >= 0 && y >= 0 && x < array.length && y < array[0].length;
+	}
 	
 	public void init(){
 		
@@ -73,14 +81,16 @@ public class World extends Module{
 		float current = colors[index];
 		float next = colors[(index == colors.length-1 ?  0 : index+1)];
 		
-		return Hue.mix(Color.WHITE, Color.BLACK, 1f-(current*(1f-mod) + next*mod), ambientColor);
+		float t = current*(1f-mod) + next*mod;
+		
+		return ambientColor.set(Color.white).lerp(Color.black, 1f-t);
 	}
 
 	@Override
 	public void update(){
-		if(Net.server() && Timers.get("checkunload", 80)) checkUnloadChunks();
+		if(Net.server() && chunkTimer.poll()) checkUnloadChunks();
 	
-		time += Timers.delta()/timescale;
+		time += Time.delta/timescale;
 		if(time >= 1f) time = 0f;
 		
 		updated = false;
@@ -123,17 +133,16 @@ public class World extends Module{
 	
 	void checkUnloadChunks(){
 		Collection<Chunk> chunks = file.getLoadedChunks();
-		Array<Spark> players = Koru.basis.getSparks();
-		
+
 		for(Chunk chunk : chunks){
 			boolean passed = false;
-			
-			for(Spark s : players){
-				if(!s.has(ChunkLoadTrait.class)) continue;
-				
-				int ecx = toChunkCoords(s.pos().x);
-				int ecy = toChunkCoords(s.pos().y);
-				
+
+			for(Entity e : Entities.all()){
+				if(!e.chunkLoad) continue;
+
+				int ecx = toChunkCoords(e.pos.x);
+				int ecy = toChunkCoords(e.pos.y);
+
 				if(Math.abs(chunk.x - ecx) <= loadrange && Math.abs(chunk.y - ecy) <= loadrange){
 					passed = true;
 					break;
@@ -146,7 +155,7 @@ public class World extends Module{
 
 	public void loadChunks(ChunkPacket packet){
 
-		//the relative position of the packet's chunk, to be put in the client's chunk array
+		//the relative position of the packet's chunk, to be put in the client's chunk Seq
 		int relativex = packet.chunk.x - lastchunkx + loadrange;
 		int relativey = packet.chunk.y - lastchunky + loadrange;
 		
@@ -188,8 +197,8 @@ public class World extends Module{
 		Tile tile = getWorldTile(x, y);
 		Material block = tile.wall();
 		Material tilem = tile.topFloor();
-		return (block.solid()) && block.getHitbox(tile(x), tile(y), Rectangle.tmp).contains(x, y) 
-			|| (tilem.solid() && tilem.getHitbox(tile(x), tile(y), Rectangle.tmp).contains(x, y));
+		return (block.solid()) && block.getHitbox(tile(x), tile(y), Rect.tmp).contains(x, y) 
+			|| (tilem.solid() && tilem.getHitbox(tile(x), tile(y), Rect.tmp).contains(x, y));
 	}
 
 	public boolean blockSolid(int x, int y){
@@ -212,14 +221,14 @@ public class World extends Module{
 		return getTile(x, y).wall() == material || getTile(x, y).topFloor() == material;
 	}
 
-	public GridPoint2 search(Material material, int x, int y, int range){
+	public Point2 search(Material material, int x, int y, int range){
 		float nearest = Float.MAX_VALUE;
 		for(int cx = -range;cx <= range;cx ++){
 			for(int cy = -range;cy <= range;cy ++){
 				int worldx = x + cx;
 				int worldy = y + cy;
 				if(getTile(worldx, worldy).wall() == material || getTile(worldx, worldy).topFloor() == material){
-					float dist = Vector2.dst(x, y, worldx, worldy);
+					float dist = Mathf.dst(x, y, worldx, worldy);
 					if(dist < nearest){
 						point.set(worldx, worldy);
 						nearest = dist;
@@ -268,7 +277,7 @@ public class World extends Module{
 	public void updateLater(int x, int y){
 		updated = true;
 		getTile(x, y).changeEvent();
-		Timers.run(2f, ()->{
+		Time.run(2f, ()->{
 			Net.send(new TileUpdatePacket(x, y, getTile(x, y)));
 		});
 	}
@@ -284,7 +293,7 @@ public class World extends Module{
 		return file.getChunk(cx, cy).getWorldTile(x, y);
 	}
 	
-	public Tile getTile(GridPoint2 point){
+	public Tile getTile(Point2 point){
 		return getTile(point.x, point.y);
 	}
 	
@@ -362,3 +371,5 @@ public class World extends Module{
 		}		
 	}
 }
+
+

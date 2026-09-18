@@ -1,33 +1,33 @@
 package io.anuke.koru.ai;
 
-import com.badlogic.gdx.ai.pfa.DefaultGraphPath;
-import com.badlogic.gdx.ai.pfa.SmoothableGraphPath;
-import com.badlogic.gdx.math.Vector2;
+import arc.math.geom.Vec2;
+import io.anuke.koru.modules.World;
+import io.anuke.koru.utils.Bits;
 
-public class TiledGraphPath extends DefaultGraphPath<Long> implements SmoothableGraphPath<Long, Vector2>{
+public class TiledGraphPath extends GraphPath<Long> implements SmoothableGraphPath<Long, Vec2>{
 
-	/** Returns the position of the node at the given index.
-	 * <p>
-	 * <b>Note that the same Vector2 instance is returned each time this method is called.</b>
-	 * @param index the index of the node you want to know the position of*/
 	@Override
-	public Vector2 getNodePosition(int index){
-		//Long node = nodes.get(index);
-		
-		//return tmpPosition.set(World.world(World.getX(node)), World.world(World.getY(node)));
-		return Vector2.Zero;
+	public Vec2 getNodePosition(int index){
+		long node = get(index);
+		return new Vec2(World.world(Bits.getLeftInt(node)), World.world(Bits.getRightInt(node)));
 	}
 
 	@Override
-	public void swapNodes(int index1, int index2){
-		Long node = nodes.get(index1);
-		nodes.set(index1, nodes.get(index2));
-		nodes.set(index2, node);
+	public int getCount(){
+		return size;
 	}
 
 	@Override
-	public void truncatePath(int newLength){
-		nodes.truncate(newLength);
+	public void swap(int i, int j){
+		Long temp = get(i);
+		set(i, get(j));
+		set(j, temp);
 	}
 
+	@Override
+	public void truncate(int newLength){
+		size = newLength;
+	}
 }
+
+

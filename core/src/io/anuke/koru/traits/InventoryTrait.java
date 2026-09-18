@@ -2,23 +2,22 @@ package io.anuke.koru.traits;
 
 import java.util.function.Consumer;
 
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ObjectMap;
-import com.badlogic.gdx.utils.ObjectSet;
+import arc.struct.Seq;
+import arc.struct.ObjectMap;
+import arc.struct.ObjectSet;
 
+import io.anuke.koru.entities.Entity;
 import io.anuke.koru.items.Item;
 import io.anuke.koru.items.ItemStack;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.network.packets.InventoryUpdatePacket;
 import io.anuke.koru.network.packets.SlotChangePacket;
-import io.anuke.ucore.ecs.Spark;
-import io.anuke.ucore.ecs.Trait;
 
 //TODO fix
-public class InventoryTrait extends Trait{
+public class InventoryTrait{
 	private static final ObjectMap<Item, Integer> temp = new ObjectMap<Item, Integer>();
 	private static final ObjectSet<Item> tempset = new ObjectSet<Item>();
-	private static final Array<ItemStack> tempArray = new Array<ItemStack>();
+	private static final Seq<ItemStack> tempArray = new Seq<ItemStack>();
 
 	public ItemStack[] inventory;
 	public ItemStack selected;
@@ -68,22 +67,22 @@ public class InventoryTrait extends Trait{
 	}
 
 	/** Server-side only. */
-	public void sendUpdate(Spark entity){
+	public void sendUpdate(Entity entity){
 		InventoryUpdatePacket update = new InventoryUpdatePacket();
 		update.selected = selected;
 		update.stacks = inventory;
-		Net.sendTo(entity.get(ConnectionTrait.class).connectionID, update);
+		Net.sendTo(entity.connectionID, update);
 	}
 
 	/** Server-side only. */
-	public void sendHotbarUpdate(Spark entity){
+	public void sendHotbarUpdate(Entity entity){
 		SlotChangePacket update = new SlotChangePacket();
 		update.stack = hotbarStack();
-		Net.sendExcept(entity.get(ConnectionTrait.class).connectionID, update);
+		Net.sendExcept(entity.connectionID, update);
 	}
 
 	/** Server-side only. */
-	public void sendHotbarUpdate(Spark entity, int to){
+	public void sendHotbarUpdate(Entity entity, int to){
 		SlotChangePacket update = new SlotChangePacket();
 		update.stack = hotbarStack();
 		Net.sendTo(to, update);
@@ -91,7 +90,7 @@ public class InventoryTrait extends Trait{
 
 	public void set(ItemStack[] stacks, ItemStack selected){
 		this.selected = selected;
-		
+
 		for(int i = 0; i < inventory.length; i++){
 			inventory[i] = stacks[i];
 		}
@@ -199,7 +198,7 @@ public class InventoryTrait extends Trait{
 	}
 
 	/**
-	 * Adds the whole itemstack array to this inventory, if possible.
+	 * Adds the whole itemstack Seq to this inventory, if possible.
 	 * 
 	 * @return an objectmap of items removed, with the key being the type and
 	 *         the value being the amount removed.
@@ -309,8 +308,8 @@ public class InventoryTrait extends Trait{
 		return sum;
 	}
 
-	/** Populates the given array with itemstacks, no duplicates. */
-	public Array<ItemStack> asArray(){
+	/** Populates the given Seq with itemstacks, no duplicates. */
+	public Seq<ItemStack> asArray(){
 		tempArray.clear();
 
 		forEach(stack -> {

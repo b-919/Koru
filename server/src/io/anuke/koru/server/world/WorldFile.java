@@ -10,9 +10,8 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import com.badlogic.gdx.utils.Pools;
-import com.badlogic.gdx.utils.TimeUtils;
-import com.badlogic.gdx.utils.compression.Lzma;
+import arc.util.pooling.Pools;
+import arc.util.Time;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
@@ -21,7 +20,7 @@ import io.anuke.koru.modules.World;
 import io.anuke.koru.network.Registrator;
 import io.anuke.koru.world.*;
 import io.anuke.koru.world.materials.Material;
-import io.anuke.ucore.util.ColorCodes;
+import arc.util.ColorCodes;
 
 //TODO do something about the chunk writers
 public class WorldFile extends WorldLoader{
@@ -35,7 +34,6 @@ public class WorldFile extends WorldLoader{
 	private ChunkWriter[] writers = new ChunkWriter[Runtime.getRuntime().availableProcessors()];
 	private Object lock = new Object();
 	private boolean debug;
-	private boolean compress = false;
 
 	public WorldFile(Path file, Generator generator, StructureGenerator structGenerator) {
 		
@@ -82,7 +80,7 @@ public class WorldFile extends WorldLoader{
 		Path path = Paths.get(file.toString(), "/" + fileName(chunk.x, chunk.y));
 		
 		while(!writers[writer].writing()){ // to prevent screwups with multiple threads using writer 0
-			writers[writer].writeChunk(chunk, path, compress);
+			writers[writer].writeChunk(chunk, path);
 			files.put(path.getFileName().toString(), path);
 			return;
 		}
@@ -91,28 +89,16 @@ public class WorldFile extends WorldLoader{
 	public Chunk readChunk(int x, int y){
 		synchronized(lock){
 			if(debug)
-				Koru.log(ColorCodes.RED + "BEGIN" + ColorCodes.YELLOW + " read chunk" + ColorCodes.RESET);
+				Koru.log(ColorCodes.red + "BEGIN" + ColorCodes.yellow + " read chunk" + ColorCodes.reset);
 			Path path = getPath(x, y);
 
-			long time = TimeUtils.millis();
+			long time = Time.millis();
 
 			try{
 				
 				Input input = null;
 				FileInputStream file = new FileInputStream(path.toFile());
-				
-				if(compress){
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					
-					Lzma.decompress(file, out);
-					ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-
-					input = new Input(in);
-					
-					out.close();
-				}else{
 					input = new Input(file);
-				}
 				Chunk chunk = kryo.readObject(input, Chunk.class);
 				
 				for(int cx = 0; cx < World.chunksize; cx ++){
@@ -126,10 +112,10 @@ public class WorldFile extends WorldLoader{
 				file.close();
 
 				if(debug)
-					Koru.log("Chunk read time elapsed: " + TimeUtils.timeSinceMillis(time));
+					Koru.log("Chunk read time elapsed: " + Time.timeSinceMillis(time));
 
 				if(debug)
-					Koru.log(ColorCodes.GREEN + "END" + ColorCodes.YELLOW + " read chunk" + ColorCodes.RESET);
+					Koru.log(ColorCodes.green + "END" + ColorCodes.yellow + " read chunk" + ColorCodes.reset);
 				return chunk;
 			}catch(Exception e){
 				Koru.log("Error writing chunk!");
@@ -140,7 +126,7 @@ public class WorldFile extends WorldLoader{
 	}
 
 	public Chunk generateChunk(int chunkx, int chunky){
-		Chunk chunk = Pools.obtain(Chunk.class);
+		Chunk chunk = Pools.obtain(Chunk.class, Chunk::new);
 		chunk.set(chunkx, chunky);
 		generator.generateChunk(chunk);
 		loadedchunks.put(hashCoords(chunkx, chunky), chunk);
@@ -189,3 +175,5 @@ public class WorldFile extends WorldLoader{
 		return (((long) a) << 32) | (b & 0xffffffffL);
 	}
 }
+
+

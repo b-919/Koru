@@ -1,10 +1,12 @@
 package io.anuke.koru.input;
 
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.ObjectMap;
-import com.badlogic.gdx.utils.Pools;
+import arc.math.Mathf;
+import arc.math.geom.Vec2;
+import arc.struct.ObjectMap;
+import arc.util.pooling.Pools;
 
 import io.anuke.koru.Koru;
+import io.anuke.koru.entities.Entity;
 import io.anuke.koru.entities.types.BlockAnimation;
 import io.anuke.koru.entities.types.ItemDrop;
 import io.anuke.koru.graphics.Fx;
@@ -17,20 +19,19 @@ import io.anuke.koru.world.materials.MaterialLayer;
 import io.anuke.koru.world.materials.MaterialTypes.Tree;
 import io.anuke.koru.world.materials.MaterialTypes.Wall;
 import io.anuke.koru.world.materials.Materials;
-import io.anuke.ucore.core.Effects;
-import io.anuke.ucore.ecs.Spark;
+import io.anuke.koru.graphics.Effects;
 
 //TODO make this less messy
 public class InputHandler{
 	public final static float reach = 75;
 	public float mouseangle;
 	private ObjectMap<InputType, Boolean> keys = new ObjectMap<InputType, Boolean>();
-	Spark spark;
+	Entity spark;
 	int blockx, blocky;
 	float blockhold;
 	float cooldown = 0;
 
-	public InputHandler(Spark spark) {
+	public InputHandler(Entity spark) {
 		this.spark = spark;
 	}
 
@@ -38,7 +39,7 @@ public class InputHandler{
 		
 		
 		//weapon updating
-		ItemStack stack = spark.get(InventoryTrait.class).hotbarStack();
+		ItemStack stack = spark.inventory.hotbarStack();
 		
 		// block breaking
 		if(key(InputType.leftclick_down)){
@@ -48,7 +49,7 @@ public class InputHandler{
 			
 			Material select = null;
 			
-			if(Vector2.dst(World.world(blockx), World.world(blocky), spark.pos().x, spark.pos().y) < reach
+			if(Mathf.dst(World.world(blockx), World.world(blocky), spark.pos.x, spark.pos.y) < reach
 					&& stack != null && stack.item.isType(ItemType.tool)){
 				
 				if(stack.breaks(block.breakType()) && block.isBreakable()){
@@ -64,18 +65,18 @@ public class InputHandler{
 				blockhold += delta * stack.item.getBreakSpeed(select.breakType());
 
 				if((int) (blockhold) % 20 == 1)
-					Effects.effect(Fx.blockparticle, select.getColor(), World.world(blockx), 
+					Effects.effect(Fx.blockparticle, gdxColor(select.getColor()), World.world(blockx), 
 							select instanceof Wall ? World.world(blocky) - 6.5f : World.world(blocky) - 1f);
 
 				if(blockhold >= select.breaktime()){
-					Effects.effect(Fx.blockbreak, select.getColor(), World.world(blockx), World.world(blocky) - 1);
+					Effects.effect(Fx.blockbreak, gdxColor(select.getColor()), World.world(blockx), World.world(blocky) - 1);
 
 					if(select instanceof Tree){
 						BlockAnimation.create(select, World.world(blockx), World.world(blocky) - 1);
 					}
 
-					spark.get(InventoryTrait.class).addItems(tile.wall().getDrops());
-					spark.get(InventoryTrait.class).sendUpdate(spark);
+					spark.inventory.addItems(tile.wall().getDrops());
+					spark.inventory.sendUpdate(spark);
 
 					ItemDrop.create(World.world(blockx), World.world(blocky), select.getDrops());
 					
@@ -115,7 +116,7 @@ public class InputHandler{
 
 	private void tileDownEvent(){
 		// block place check
-		ItemStack stack = spark.get(InventoryTrait.class).hotbarStack();
+		ItemStack stack = spark.inventory.hotbarStack();
 
 		if(stack == null)
 			return;
@@ -127,13 +128,13 @@ public class InputHandler{
 
 			Tile tile = Koru.world.getTile(blockx, blocky);
 
-			InventoryTrait inv = spark.get(InventoryTrait.class);
+			InventoryTrait inv = spark.inventory;
 
 			BlockRecipe recipe = null;
 			
 			if(inv.recipe != -1) recipe = BlockRecipe.getRecipe(inv.recipe);
 			
-			if(spark.pos().dst(World.world(blockx), World.world(blocky)) < reach
+			if(spark.pos.dst(World.world(blockx), World.world(blocky)) < reach
 					&& inv.recipe != -1 && inv.hasAll(recipe.requirements())
 					&& World.isPlaceable(recipe.result(), tile)){
 				
@@ -164,7 +165,7 @@ public class InputHandler{
 	}
 
 	private void rawClick(boolean left){
-		ItemStack stack = spark.get(InventoryTrait.class).hotbarStack();
+		ItemStack stack = spark.inventory.hotbarStack();
 
 		if(stack == null)
 			return;
@@ -201,16 +202,20 @@ public class InputHandler{
 			tileDownEvent();
 
 		// fire block click event
-		InventoryTrait inv = spark.get(InventoryTrait.class);
+		InventoryTrait inv = spark.inventory;
 		int slot = inv.hotbar;
 		ItemStack stack = inv.inventory[slot];
 		if(stack == null)
 			return;
 		Tile tile = Koru.world.getTile(blockx, blocky);
 
-		ClickEvent event = Pools.get(ClickEvent.class).obtain().set(down, blockx, blocky, tile, inv);
+		ClickEvent event = Pools.obtain(ClickEvent.class, ClickEvent::new).set(down, blockx, blocky, tile, inv);
 		stack.item.onClickEvent(event);
 		event.free();
+	}
+
+	static arc.graphics.Color gdxColor(arc.graphics.Color color){
+		return new arc.graphics.Color(color.r, color.g, color.b, color.a);
 	}
 
 	public static class ClickEvent{

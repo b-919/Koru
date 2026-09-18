@@ -1,7 +1,7 @@
 package io.anuke.koru.world;
 
-import com.badlogic.gdx.utils.Pool.Poolable;
-import com.badlogic.gdx.utils.Pools;
+import arc.util.pooling.Pool.Poolable;
+import arc.util.pooling.Pools;
 
 import io.anuke.koru.modules.World;
 

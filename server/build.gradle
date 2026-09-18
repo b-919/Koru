@@ -1,8 +1,11 @@
 apply plugin: "java"
 
 java {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 17
+    targetCompatibility = 17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -36,3 +39,7 @@ task dist(type: Jar) {
 }
 
 dist.dependsOn classes
+//testing
+task printRt {
+    doLast { println sourceSets.main.runtimeClasspath.asPath }
+}

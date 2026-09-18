@@ -1,19 +1,13 @@
 package io.anuke.koru.ai;
 
+import arc.struct.*;
 
-import com.badlogic.gdx.ai.pfa.Connection;
-import com.badlogic.gdx.ai.pfa.indexed.IndexedGraph;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.LongArray;
-
-//TODO switch to an actual Node class with an index instead of Longs
-//TODO pooling
 public class Graph implements IndexedGraph<Long>{
-	LongArray nodes = new LongArray();
-	private Array<Connection<Long>> tempConnections = new Array<Connection<Long>>();
+	LongSeq nodes = new LongSeq();
+	private Seq<AiConnection<Long>> tempConnections = new Seq<AiConnection<Long>>();
 	
 	@Override
-	public Array<Connection<Long>> getConnections(Long fromNode){
+	public Seq<AiConnection<Long>> getConnections(Long fromNode){
 		//TODO return the connections
 		return tempConnections;
 	}
@@ -33,3 +27,5 @@ public class Graph implements IndexedGraph<Long>{
 		nodes.add(node);
 	}
 }
+
+

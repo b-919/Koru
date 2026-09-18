@@ -1,11 +1,8 @@
 package io.anuke.koru.server.world;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
 
-import com.badlogic.gdx.utils.compression.Lzma;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
@@ -24,29 +21,13 @@ public class ChunkWriter{
 		kryo.register(Material.class, new Registrator.MaterialsSerializer());
 	}
 
-	public void writeChunk(Chunk chunk, Path path, boolean compress){
+	public void writeChunk(Chunk chunk, Path path){
 		writing = true;
 		try{
-			if(compress){
-				ByteArrayOutputStream stream = new ByteArrayOutputStream();
-				Output output = new Output(stream);
-				kryo.writeObject(output, chunk);
-				output.close();
-				
-				ByteArrayInputStream in = new ByteArrayInputStream(stream.toByteArray());
-				FileOutputStream file = new FileOutputStream(path.toString());
-				
-				Lzma.compress(in, file);
-				
-				stream.close();
-				in.close();
-				file.close();
-			}else{
-				FileOutputStream file = new FileOutputStream(path.toString());
-				Output output = new Output(file);
-				kryo.writeObject(output, chunk);
-				output.close();
-			}
+			FileOutputStream file = new FileOutputStream(path.toString());
+			Output output = new Output(file);
+			kryo.writeObject(output, chunk);
+			output.close();
 
 		}catch(Exception e){
 			Koru.log("Error writing chunk!");

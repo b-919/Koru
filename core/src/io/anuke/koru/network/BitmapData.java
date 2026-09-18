@@ -1,11 +1,12 @@
 package io.anuke.koru.network;
 
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Pixmap.Format;
-import com.badlogic.gdx.utils.IntSet;
-import com.badlogic.gdx.utils.ObjectMap;
+import java.nio.ByteBuffer;
 
-//TODO remove?
+import arc.graphics.Pixmap;
+import arc.struct.IntSet;
+import arc.struct.ObjectMap;
+
+//TODO remove? or refactor
 public class BitmapData{
 	final public byte[] data;
 	final public int width, height;
@@ -20,7 +21,7 @@ public class BitmapData{
 		
 		for(int x = 0; x < pixmap.getWidth(); x ++){
 			for(int y = 0; y < pixmap.getHeight(); y ++){
-				int color = pixmap.getPixel(x, y);
+				int color = getPixel(pixmap, x, y);
 				colorset.add(color);
 			}
 		}
@@ -39,7 +40,7 @@ public class BitmapData{
 		
 		for(int x = 0; x < pixmap.getWidth(); x ++){
 			for(int y = 0; y < pixmap.getHeight(); y ++){
-				Byte b = rmap.get(pixmap.getPixel(x, y));
+				Byte b = rmap.get(getPixel(pixmap, x, y));
 				data[x + y*pixmap.getWidth()] = (b == null ? 5 : b);
 			}
 		}
@@ -62,13 +63,30 @@ public class BitmapData{
 	}
 	
 	public Pixmap toPixmap(){
-		Pixmap pixmap = new Pixmap(width, height, Format.RGBA8888);
+		Pixmap pixmap = new Pixmap(width, height);
 		for(int x = 0; x < pixmap.getWidth(); x ++){
 			for(int y = 0; y < pixmap.getHeight(); y ++){
-				Integer i = colors[data[x + y*width]];
-				pixmap.drawPixel(x, y, i);
+				int color = colors[data[x + y*width]];
+				setPixel(pixmap, x, y, color);
 			}
 		}
 		return pixmap;
 	}
+
+	static int getPixel(Pixmap pixmap, int x, int y){
+		ByteBuffer buf = pixmap.getPixels();
+		int i = (y * pixmap.getWidth() + x) * 4;
+		return (buf.get(i) & 0xff) << 24 | (buf.get(i + 1) & 0xff) << 16 | (buf.get(i + 2) & 0xff) << 8 | (buf.get(i + 3) & 0xff);
+	}
+
+	static void setPixel(Pixmap pixmap, int x, int y, int color){
+		ByteBuffer buf = pixmap.getPixels();
+		int i = (y * pixmap.getWidth() + x) * 4;
+		buf.put(i, (byte)(color >>> 24));
+		buf.put(i + 1, (byte)(color >>> 16));
+		buf.put(i + 2, (byte)(color >>> 8));
+		buf.put(i + 3, (byte)color);
+	}
 }
+
+

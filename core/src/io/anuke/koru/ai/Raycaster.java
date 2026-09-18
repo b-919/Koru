@@ -1,26 +1,23 @@
 package io.anuke.koru.ai;
 
 import io.anuke.koru.world.Physics;
+import arc.math.geom.Vec2;
 
-import com.badlogic.gdx.ai.utils.Collision;
-import com.badlogic.gdx.ai.utils.Ray;
-import com.badlogic.gdx.ai.utils.RaycastCollisionDetector;
-import com.badlogic.gdx.math.Vector2;
-
-public class Raycaster implements RaycastCollisionDetector<Vector2>{
+public class Raycaster implements RaycastCollisionDetector<Vec2>{
 
 	@Override
-	public boolean collides(Ray<Vector2> ray){
+	public boolean collides(Ray<Vec2> ray){
 		return Physics.cast(ray.start.x, ray.start.y, ray.end.x, ray.end.y);
 	}
 
 	@Override
-	public boolean findCollision(Collision<Vector2> collision, Ray<Vector2> ray){
-		Vector2 v = Physics.vectorCast(ray.start.x, ray.start.y, ray.end.x, ray.end.y);
+	public boolean findCollision(Collision<Vec2> collision, Ray<Vec2> ray){
+		Vec2 v = Physics.vectorCast(ray.start.x, ray.start.y, ray.end.x, ray.end.y);
 		if(v == null) return false;
-		collision.point = v;
-		collision.normal = v.nor();
+		collision.point.set(v.x, v.y);
+		collision.normal.set(v.x, v.y).nor();
 		return true;
 	}
-
 }
+
+

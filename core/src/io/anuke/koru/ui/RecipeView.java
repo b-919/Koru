@@ -1,17 +1,19 @@
 package io.anuke.koru.ui;
 
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import arc.graphics.g2d.Batch;
+import arc.graphics.g2d.TextureRegion;
 
 import io.anuke.koru.Koru;
 import io.anuke.koru.items.Recipe;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.network.packets.RecipeSelectPacket;
 import io.anuke.koru.traits.InventoryTrait;
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.scene.Element;
-import io.anuke.ucore.scene.ui.layout.Table;
-import io.anuke.ucore.scene.utils.ClickListener;
+import io.anuke.koru.graphics.Draw;
+import arc.scene.Element;
+import arc.scene.ui.layout.Table;
+import arc.scene.event.ClickListener;
+import arc.scene.event.InputEvent;
+import arc.scene.style.Drawable;
 
 public class RecipeView extends Table{
 	final int slotsize = 64;
@@ -26,8 +28,8 @@ public class RecipeView extends Table{
 			add(slot).size(slotsize);
 		}
 		
-		background("button-window-bg");
-		pad(4);
+		background(Skin.instance.get("button-window-bg", Drawable.class));
+		margin(4);
 	}
 	
 	class Slot extends Element{
@@ -39,22 +41,26 @@ public class RecipeView extends Table{
 			this.index = index;
 			this.recipe = recipe;
 			
-			click = clicked(()->{
-				selected = Slot.this;
-					
-				Koru.control.player.get(InventoryTrait.class).recipe = index;
-					
-				RecipeSelectPacket packet = new RecipeSelectPacket();
-				packet.recipe = index;
-				Net.send(packet);
+			addListener(click = new ClickListener(){
+				@Override
+				public void clicked(InputEvent event, float x, float y){
+					selected = Slot.this;
+						
+					Koru.control.player.inventory.recipe = index;
+						
+					RecipeSelectPacket packet = new RecipeSelectPacket();
+					packet.recipe = index;
+					Net.send(packet);
+				}
 			});
 
 		}
 
-		public void draw(Batch batch, float alpha){
+		@Override
+		public void draw(){
+			float alpha = parentAlpha;
 			
-			
-			patch(Koru.control.player.get(InventoryTrait.class).recipe == index ? "slotset" : (click.isOver() ? "slotselect2" : "slot2"));
+			Skin.instance.get(Koru.control.player.inventory.recipe == index ? "slotset" : (click.isOver() ? "slotselect2" : "slot2"), Drawable.class).draw(x, y, width, height);
 			
 			TextureRegion region = Draw.region(recipe.result().name() + "item");
 			
@@ -62,29 +68,15 @@ public class RecipeView extends Table{
 			
 			Draw.color(0f, 0f, 0f, 0.1f * alpha);
 			
-			Draw.rect(recipe.result().name() + "item", x + width/2f, y + height/2f - scale, 
-					region.getRegionWidth()*scale, region.getRegionHeight()*scale);
+			Draw.rect(region, x + width/2f, y + height/2f - scale, 
+					region.width*scale, region.height*scale);
 			
-			Draw.color(getColor());
+			Draw.color(color);
 			
-			Draw.rect(recipe.result().name() + "item", x + width/2f, y + height/2f, 
-					region.getRegionWidth()*scale, region.getRegionHeight()*scale);
-			
-			
-			/*
-			Material result = recipe.result();
-			TextureRegion region = Draw.region(result.name());
-			
-			float w = region.getRegionWidth()*pscale,h = region.getRegionHeight()*pscale;
-			
-			if(result.layer() == MaterialLayer.floor){
-				batch.draw(region, getX() + getWidth()/2-region.getRegionWidth()*pscale/2, getY() + getHeight()/2-region.getRegionHeight()*pscale/2, w,h);
-			}else{
-				batch.draw(region, getX() + getWidth()/2-region.getRegionWidth()*pscale/2, 4*pscale+ getY() + getHeight()/2-region.getRegionHeight()*pscale/2, w,h);
-			}
-			
-			Draw.reset();
-			*/
+			Draw.rect(region, x + width/2f, y + height/2f, 
+					region.width*scale, region.height*scale);
 		}
 	}
 }
+
+

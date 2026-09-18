@@ -1,8 +1,8 @@
 package io.anuke.koru.server;
 
-import com.badlogic.gdx.files.FileHandle;
+import arc.files.Fi;
 
 //TODO move this somewhere else
 public class Directories{
-	public static final FileHandle materials = new FileHandle("materials.json");
+	public static final Fi materials = new Fi("materials.json");
 }

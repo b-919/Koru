@@ -1,10 +1,9 @@
 package io.anuke.koru.ui;
 
 import io.anuke.koru.Koru;
-import io.anuke.koru.traits.ConnectionTrait;
-import io.anuke.ucore.scene.builders.*;
-import io.anuke.ucore.scene.ui.Dialog;
-import io.anuke.ucore.scene.ui.TextDialog;
+import arc.scene.ui.Dialog;
+import arc.scene.ui.Label;
+import arc.scene.ui.TextField;
 
 public class ConnectDialog extends Dialog{
 	TextDialog fail;
@@ -15,31 +14,27 @@ public class ConnectDialog extends Dialog{
 	}
 	
 	private void setup(){
-		content().pad(16);
+		cont.margin(16);
 		addCloseButton();
 		
-		build.begin(content());
+		cont.add(new Label("Name:"));
 		
-		new label("Name:");
+		cont.field(System.getProperty("user.name"), s -> {
+			Koru.control.player.name = s;
+		});
 		
-		new field(System.getProperty("user.name"), s->{
-			Koru.control.player.get(ConnectionTrait.class).name = s;
-		}){{get().change();}};
+		cont.row();
 		
-		content().row();
+		cont.add(new Label("IP:"));
 		
-		new label("IP:");
-		
-		new field("localhost", s->{
+		cont.field("localhost", s -> {
 			Koru.network.ip = s;
 		});
 		
-		content().row();
+		cont.row();
 		
-		new button("Connect", ()->{
+		cont.button("Connect", () -> {
 			Koru.network.connect();
 		}).colspan(2).padTop(10).size(300, 50);
-		
-		build.end();
 	}
 }

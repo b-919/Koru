@@ -2,48 +2,41 @@ package io.anuke.koru;
 
 import java.util.Calendar;
 
-import com.badlogic.gdx.Gdx;
+import arc.Core;
 
+import io.anuke.koru.entities.Entities;
+import io.anuke.koru.entities.TileCollision;
 import io.anuke.koru.graphics.lsystems.LSystems;
 import io.anuke.koru.modules.*;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.utils.Resources;
 import io.anuke.koru.world.Tile;
-import io.anuke.ucore.core.Effects;
-import io.anuke.ucore.core.Timers;
-import io.anuke.ucore.ecs.Basis;
-import io.anuke.ucore.ecs.extend.processors.TileCollisionProcessor;
-import io.anuke.ucore.modules.ModuleCore;
-import io.anuke.ucore.util.ColorCodes;
-import io.anuke.ucore.util.Strings;
+import io.anuke.koru.graphics.Effects;
+import io.anuke.koru.modules.KoruModuleCore;
+import arc.util.ColorCodes;
+import arc.util.Time;
 
-public class Koru extends ModuleCore{
+public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 	public static Renderer renderer;
 	public static Control control;
 	public static UI ui;
 	public static World world;
 	public static Network network;
-	
-	public static Basis basis;
+	public static io.anuke.koru.ui.Skin skin;
 	
 	private static StringBuffer log = new StringBuffer();
 
 	@Override
 	public void init(){
+		//arc-backed chunks logic
+		arc.Core.camera = new arc.graphics.Camera();
+		arc.Core.batch = new arc.graphics.g2d.SpriteBatch();
 		LSystems.generate();
 		try{
 			
 			Resources.loadData();
 			
-			basis = new Basis();
-			
-			basis.addProcessor(new TileCollisionProcessor(World.tilesize, (x, y)->{
-				Tile tile = world.getTile(x, y);
-				return tile != null && tile.solid();
-			}, (x, y, out)->{
-				Tile tile = world.getTile(x, y);
-				tile.solidMaterial().getHitbox(x, y, out);
-			}));
+			Entities.instance = new Entities();
 			
 			Effects.setEffectProvider((id, color, x, y, rotation)->{
 				throw new IllegalArgumentException("Effects cannot be created clientside!");
@@ -55,6 +48,22 @@ public class Koru extends ModuleCore{
 			
 			module(world = new World());
 			module(ui = new UI());
+
+			TileCollision.tilesize = World.tilesize;
+			TileCollision.collider = (x, y)->{
+				Tile tile = world.getTile(x, y);
+				return tile != null && tile.solid();
+			};
+			TileCollision.hitbox = (x, y, out)->{
+				Tile tile = world.getTile(x, y);
+				tile.solidMaterial().getHitbox(x, y, out);
+			};
+			
+			resize(arc.Core.graphics.getWidth(), arc.Core.graphics.getHeight());
+			
+			for(KoruModule module : modulearray){
+				module.init();
+			}
 			
 		}catch (Exception e){
 			handleException(e);
@@ -64,15 +73,24 @@ public class Koru extends ModuleCore{
 	}
 
 	@Override
+	public void update(){
+		render();
+	}
+
+	@Override
 	public void render(){
 		
-		Timers.update();
-		
+		Time.update();
+
 		try{
 			super.render();
-			basis.update();
+			Entities.instance.update();
 		}catch(Exception e){
 			handleException(e);
+		}
+
+		if(Core.graphics.getFrameId() % 30 == 0){
+			System.out.println("[DEBUG frame=" + Core.graphics.getFrameId() + " size=" + Core.graphics.getWidth() + "x" + Core.graphics.getHeight() + "]");
 		}
 	}
 	
@@ -81,28 +99,27 @@ public class Koru extends ModuleCore{
 		
 		//write log - useless for me, since I can just see the stack trace
 		if(!System.getProperty("user.name").equals("anuke")){
-			Gdx.files.local("korulog-" + Calendar.getInstance().getTime() + ".log").writeString(Strings.parseException(e), false);
+			Core.files.local("korulog-" + Calendar.getInstance().getTime().toString().replace(":", "-") + ".log").writeString(e.toString() + "\n" + java.util.Arrays.toString(e.getStackTrace()), false);
 		}
 		//exit, nothing left to do here
-		Gdx.app.exit();
+		Core.app.exit();
 	}
 
 	public static void log(Object o){
 		StackTraceElement e = Thread.currentThread().getStackTrace()[2];
 		String name = e.getFileName().replace(".java", "");
 
-		if(Net.server() || Gdx.app == null){
-			if(Gdx.app == null){
-				System.out.println(ColorCodes.BACK_DEFAULT + ColorCodes.BOLD + ColorCodes.LIGHT_BLUE + "[" + name + "]: "
-						+ ColorCodes.LIGHT_GREEN + o + ColorCodes.RED);
+		if(Net.server() || Core.app == null){
+			if(Core.app == null){
+				System.out.println(ColorCodes.backDefault + ColorCodes.bold + ColorCodes.lightBlue + "[" + name + "]: "
+						+ ColorCodes.lightGreen + o + ColorCodes.red);
 			}else{
-				Gdx.app.log(
-						ColorCodes.BACK_DEFAULT + ColorCodes.LIGHT_BLUE + "[" + ColorCodes.BLUE + name + ColorCodes.BACK_DEFAULT + "::"
-								+ ColorCodes.LIGHT_YELLOW + e.getMethodName() + ColorCodes.LIGHT_BLUE + "]",
-						ColorCodes.LIGHT_GREEN + "" + o + ColorCodes.RED);
+				System.out.println(ColorCodes.backDefault + ColorCodes.lightBlue + "[" + ColorCodes.blue + name + ColorCodes.backDefault + "::"
+						+ ColorCodes.lightYellow + e.getMethodName() + ColorCodes.lightBlue + "]"
+						+ ColorCodes.lightGreen + o + ColorCodes.red);
 			}
 		}else{
-			Gdx.app.log("[" + name + "::" + e.getMethodName() + "]", "" + o);
+			System.out.println("[" + name + "::" + e.getMethodName() + "] " + o);
 
 			String message = "[" + name + "::" + e.getMethodName() + "]" + "" + o;
 			log.append(message + "\n");

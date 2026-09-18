@@ -1,6 +1,6 @@
 package io.anuke.koru.network.packets;
 
-import com.badlogic.gdx.utils.ObjectMap;
+import arc.struct.ObjectMap;
 
 import io.anuke.koru.network.syncing.SyncData;
 

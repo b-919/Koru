@@ -1,32 +1,32 @@
 package io.anuke.koru.ui;
 
-import static io.anuke.ucore.core.Core.skin;
-
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.Array;
-
+import arc.Core;
+import arc.graphics.Color;
+import arc.graphics.g2d.Batch;
+import arc.graphics.g2d.Font;
+import arc.graphics.g2d.GlyphLayout;
+import arc.util.Align;
+import arc.struct.Seq;
+import arc.scene.Scene;
+import arc.scene.ui.Label;
+import arc.scene.ui.Label.LabelStyle;
+import arc.scene.ui.TextField;
+import arc.scene.ui.layout.Table;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.network.packets.ChatPacket;
-import io.anuke.ucore.scene.Scene;
-import io.anuke.ucore.scene.ui.Label;
-import io.anuke.ucore.scene.ui.Label.LabelStyle;
-import io.anuke.ucore.scene.ui.TextField;
-import io.anuke.ucore.scene.ui.layout.Table;
+
+import arc.graphics.g2d.Draw;
+import arc.scene.style.Drawable;
 
 public class ChatView extends Table{
 	private final static int messagesShown = 10;
-	private Array<ChatMessage> messages = new Array<ChatMessage>();
+	private Seq<ChatMessage> messages = new Seq<ChatMessage>();
 	private float fadetime;
 	private float lastfadetime;
 	private boolean chatOpen = false;
 	private TextField chatfield;
 	private Label fieldlabel = new Label(">");
-	private BitmapFont font;
+	private Font font;
 	private GlyphLayout layout = new GlyphLayout();
 	private float offsetx = 4, offsety = 4, fontoffsetx = 2, chatspace = 50;
 	private float textWidth = 600;
@@ -38,7 +38,7 @@ public class ChatView extends Table{
 		super();
 		
 		setFillParent(true);
-		font = skin.getFont("pixel-font");
+		font = Skin.instance.get("pixel-font", Font.class);
 		
 		setup();
 	}
@@ -48,42 +48,44 @@ public class ChatView extends Table{
 		fieldlabel.getStyle().font = font;
 		fieldlabel.setStyle(fieldlabel.getStyle());
 		fieldlabel.setFontScale(2);
-		chatfield = new TextField("", new TextField.TextFieldStyle(skin.get(TextField.TextFieldStyle.class)));
+		chatfield = new TextField("", Skin.instance.get(null, TextField.TextFieldStyle.class));
 		
-		chatfield.getStyle().background = skin.getDrawable("blank");
-		chatfield.getStyle().fontColor = Color.WHITE;
-		chatfield.getStyle().font = skin.getFont("pixel-font-nomarkup");
+		chatfield.getStyle().background = Skin.instance.get("blank", arc.scene.style.Drawable.class);
+		chatfield.getStyle().fontColor = Color.white;
+		chatfield.getStyle().font = Skin.instance.get("pixel-font-nomarkup", Font.class);
 		
-		bottom().left().padBottom(offsety).padLeft(offsetx*2).add(fieldlabel).padBottom(4f);
+		bottom().left();
+		add(fieldlabel).padBottom(4f).padLeft(offsetx*2).padBottom(offsety);
 		
 		add(chatfield).padBottom(offsety).padLeft(offsetx).growX().padRight(offsetx).height(28);
 	}
 	
 	@Override
-	public void draw(Batch batch, float alpha){
+	public void draw(){
+		float alpha = parentAlpha;
 		
-		batch.setColor(shadowColor);
+		Draw.color(shadowColor);
 		if(chatOpen)
-			batch.draw(skin.getRegion("white"), offsetx, chatfield.getY(), Gdx.graphics.getWidth()-offsetx*2, chatfield.getHeight()-1);
+			Skin.instance.get("white", Drawable.class).draw(offsetx, chatfield.y, Core.graphics.getWidth()-offsetx*2, chatfield.getHeight()-1);
 		
 		font.getData().setScale(2f);
 		font.getData().down = -21.5f;
 		font.getData().lineHeight = 22f;
 		
-		super.draw(batch, alpha);
+		super.draw();
 		
 		
 		float spacing = chatspace;
 		
-		chatfield.setVisible(chatOpen);
-		fieldlabel.setVisible(chatOpen);
+		chatfield.visible = chatOpen;
+		fieldlabel.visible = chatOpen;
 		
-		batch.setColor(shadowColor);
+		Draw.color(shadowColor);
 		
 		float theight = offsety + spacing;
 		for(int i = 0; i < messagesShown && i < messages.size && i < fadetime; i ++){
 			
-			layout.setText(font, messages.get(i).formattedMessage, Color.WHITE, textWidth, Align.bottomLeft, true);
+			layout.setText(font, messages.get(i).formattedMessage, Color.white, textWidth, Align.bottomLeft, true);
 			theight += layout.height+textspacing;
 			if(i == 0)theight -= textspacing+1;
 			
@@ -92,20 +94,20 @@ public class ChatView extends Table{
 			
 			if(fadetime-i < 1f && fadetime-i >= 0f){
 				font.getCache().setAlphas(fadetime-i);
-				batch.setColor(0,0,0,shadowColor.a*(fadetime-i));
+				Draw.color(0,0,0,shadowColor.a*(fadetime-i));
 					
 			}
 			
-			batch.draw(skin.getRegion("white"), offsetx, theight-layout.height+1-4, textWidth, layout.height+textspacing);
-			batch.setColor(shadowColor);
+			Skin.instance.get("white", Drawable.class).draw(offsetx, theight-layout.height+1-4, textWidth, layout.height+textspacing);
+			Draw.color(shadowColor);
 			
-			font.getCache().draw(batch);
+			font.getCache().draw();
 		}
 		
-		batch.setColor(Integer.MAX_VALUE);
+		Draw.color(1f, 1f, 1f, 1f);
 		
 		if(fadetime > 0 && !chatOpen)
-		fadetime -= Gdx.graphics.getDeltaTime()*60f/120f;
+		fadetime -= Core.graphics.getDeltaTime()*60f/120f;
 	}
 	
 	private void sendMessage(){
@@ -122,7 +124,7 @@ public class ChatView extends Table{
 	public void toggle(){
 		Scene scene = getScene();
 		
-		if(!chatOpen && (scene.getKeyboardFocus() == null || !scene.getKeyboardFocus().getParent().isVisible())){
+		if(!chatOpen && (scene.getKeyboardFocus() == null || !scene.getKeyboardFocus().parent.visible)){
 			//FocusManager.switchFocus(chatfield.getStage(), chatfield);
 			scene.setKeyboardFocus(chatfield);
 			chatOpen = !chatOpen;
@@ -163,3 +165,5 @@ public class ChatView extends Table{
 		}
 	}
 }
+
+

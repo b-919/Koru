@@ -1,34 +1,31 @@
 package io.anuke.koru.entities.types;
 
+import io.anuke.koru.graphics.Draw;
+
+import io.anuke.koru.entities.Entity;
+import io.anuke.koru.graphics.Drawf;
 import io.anuke.koru.network.SyncType;
-import io.anuke.koru.traits.SyncTrait;
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.ecs.Prototype;
-import io.anuke.ucore.ecs.TraitList;
-import io.anuke.ucore.ecs.extend.traits.*;
+import io.anuke.koru.network.syncing.Interpolator;
 
-public class TestEntity extends Prototype{
+public class TestEntity extends Entity{
 
-	@Override
-	public TraitList traits(){
-		return new TraitList(
-			new PosTrait(),
-			//TODO
-			//new RenderComponent(new EnemyRenderer()), 
-			new FacetTrait((trait, spark)->{
-				trait.draw(d->{
-					d.layer = spark.pos().y;
-					
-					Draw.grect("player", spark.pos().x, spark.pos().y);
-				});
-				
-				trait.drawShadow(spark, 8, 0);
-				
-			}),
-			new ColliderTrait(7, 7),
-			new SyncTrait(SyncType.physics),
-			new HealthTrait()
-		);
+	{
+		hasCollider = true;
+		cwidth = 7;
+		cheight = 7;
+
+		syncType = SyncType.physics;
+		interpolator = new Interpolator();
 	}
 
+	@Override
+	public void draw(){
+		Draw.z(pos().y);
+
+		Draw.rect("player", pos().x, pos().y);
+
+		Drawf.shadow(this, 8, 0);
+	}
 }
+
+

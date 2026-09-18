@@ -1,14 +1,14 @@
 package io.anuke.koru.ai;
 
-import com.badlogic.gdx.ai.pfa.Heuristic;
+import io.anuke.koru.modules.World;
+import io.anuke.koru.utils.Bits;
 
 public class ManhattanDistanceHueristic implements Heuristic<Long>{
 
 	@Override
 	public float estimate(Long node, Long other){
-		//float x = World.world(World.getX(node)), y = World.world(World.getY(node));
-		//float x2 = World.world(World.getX(other)), y2 = World.world(World.getY(other));
-		//return Math.abs(x2 - x) + Math.abs(y2 - y);
-		return 0;
+		float x = World.world(Bits.getLeftInt(node)), y = World.world(Bits.getRightInt(node));
+		float x2 = World.world(Bits.getLeftInt(other)), y2 = World.world(Bits.getRightInt(other));
+		return Math.abs(x2 - x) + Math.abs(y2 - y);
 	}
 }

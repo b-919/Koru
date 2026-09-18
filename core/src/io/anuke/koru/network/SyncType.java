@@ -1,71 +1,66 @@
 package io.anuke.koru.network;
 
+import io.anuke.koru.entities.Entity;
 import io.anuke.koru.network.syncing.SyncData;
-import io.anuke.koru.traits.DirectionTrait;
-import io.anuke.koru.traits.InputTrait;
-import io.anuke.koru.traits.SyncTrait;
-import io.anuke.ucore.ecs.Spark;
+import io.anuke.koru.traits.DirectionTrait.Direction;
 
 public enum SyncType{
 	position{
-		public SyncData write(Spark spark){
-			return new SyncData(spark, spark.pos().x, spark.pos().y);
+		public SyncData write(Entity entity){
+			return new SyncData(entity, entity.pos.x, entity.pos.y);
 		}
 
-		public void read(SyncData data, Spark spark){
-			SyncTrait sync = spark.get(SyncTrait.class);
-			
-			if(sync.interpolator != null){
-				sync.interpolator.push(spark, data.x(), data.y());
+		public void read(SyncData data, Entity entity){
+			if(entity.interpolator != null){
+				entity.interpolator.push(entity, data.x(), data.y());
 			}else{
-				spark.pos().set(data.x(), data.y());
+				entity.pos.set(data.x(), data.y());
 			}
 		}
 	},
 	physics{
-		public SyncData write(Spark spark){
-			return new SyncData(spark, spark.pos().x, spark.pos().y);
+		public SyncData write(Entity entity){
+			return new SyncData(entity, entity.pos.x, entity.pos.y);
 		}
 
-		public void read(SyncData data, Spark spark){
-			SyncTrait sync = spark.get(SyncTrait.class);
-			
-			if(sync.interpolator != null){
-				sync.interpolator.push(spark, data.x(), data.y());
+		public void read(SyncData data, Entity entity){
+			if(entity.interpolator != null){
+				entity.interpolator.push(entity, data.x(), data.y());
 			}else{
-				spark.pos().set(data.x(), data.y());
+				entity.pos.set(data.x(), data.y());
 			}
 		}
 	},
 	player{
-		public SyncData write(Spark spark){
-			return new SyncData(spark, 
-					spark.pos().x, spark.pos().y, 
-					spark.get(InputTrait.class).input.mouseangle, 
-					spark.get(DirectionTrait.class).direction);
+		public SyncData write(Entity entity){
+			return new SyncData(entity,
+					entity.pos.x, entity.pos.y,
+					entity.input == null ? 0 : entity.input.mouseangle,
+					entity.direction);
 		}
 
-		public void read(SyncData data, Spark spark){
-			spark.get(DirectionTrait.class).direction = data.get(3);
+		public void read(SyncData data, Entity entity){
+			entity.direction = data.get(3);
 			float x = data.get(0);
 			float y = data.get(1);
-			
-			spark.get(DirectionTrait.class).walking = 
-					spark.pos().dst(x, y) > 0.05f;
-			
-			spark.get(InputTrait.class).input.mouseangle = data.get(2);
-			SyncTrait sync = spark.get(SyncTrait.class);
-			
-			if(sync.interpolator != null){
-				sync.interpolator.push(spark, x, y);
+
+			entity.walking = entity.pos.dst(x, y) > 0.05f;
+
+			if(entity.input != null)
+				entity.input.mouseangle = data.get(2);
+
+			if(entity.interpolator != null){
+				entity.interpolator.push(entity, x, y);
 			}else{
-				spark.pos().set(x, y);
+				entity.pos.set(x, y);
 			}
 		}
 	};
 
-	public abstract SyncData write(Spark spark);
+	public abstract SyncData write(Entity entity);
 
-	public abstract void read(SyncData buffer, Spark spark);
+	public abstract void read(SyncData buffer, Entity entity);
 
 }
+
+

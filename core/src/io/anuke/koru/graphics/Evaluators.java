@@ -1,11 +1,11 @@
 package io.anuke.koru.graphics;
 
-import io.anuke.ucore.lsystem.IEvaluator;
-import io.anuke.ucore.lsystem.LTree;
-import io.anuke.ucore.lsystem.LTree.Leaf;
-import io.anuke.ucore.lsystem.LTree.Line;
-import io.anuke.ucore.util.GridMap;
-import io.anuke.ucore.util.Mathf;
+import io.anuke.koru.graphics.lsystems.IEvaluator;
+import io.anuke.koru.graphics.lsystems.LTree;
+import io.anuke.koru.graphics.lsystems.LTree.Leaf;
+import io.anuke.koru.graphics.lsystems.LTree.Line;
+import io.anuke.koru.utils.GridMap;
+import arc.math.Mathf;
 
 public enum Evaluators implements IEvaluator{
 	symmetry{

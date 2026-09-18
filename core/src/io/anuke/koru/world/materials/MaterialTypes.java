@@ -3,30 +3,30 @@ package io.anuke.koru.world.materials;
 import static io.anuke.koru.graphics.FacetPool.get;
 import static io.anuke.koru.modules.World.tilesize;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.math.Vector3;
+import arc.graphics.Color;
+import arc.math.geom.Point2;
+import arc.math.geom.Vec3;
 
 import io.anuke.koru.Koru;
+import io.anuke.koru.entities.Entity;
 import io.anuke.koru.graphics.KoruFacet;
 import io.anuke.koru.graphics.KoruFacetLayers;
 import io.anuke.koru.graphics.ReflectionlessFacet;
 import io.anuke.koru.graphics.lsystems.LSystems;
 import io.anuke.koru.modules.World;
-import io.anuke.koru.traits.InventoryTrait;
 import io.anuke.koru.world.BreakType;
 import io.anuke.koru.world.Tile;
-import io.anuke.ucore.core.Draw;
-import io.anuke.ucore.core.Timers;
-import io.anuke.ucore.ecs.Spark;
-import io.anuke.ucore.facet.BaseFacet;
-import io.anuke.ucore.facet.FacetList;
-import io.anuke.ucore.facet.Sorter;
-import io.anuke.ucore.function.Predicate;
-import io.anuke.ucore.graphics.Hue;
-import io.anuke.ucore.lsystem.LSystem;
-import io.anuke.ucore.util.Geometry;
-import io.anuke.ucore.util.Mathf;
+import io.anuke.koru.graphics.Draw;
+import arc.util.Time;
+import io.anuke.koru.graphics.BaseFacet;
+import io.anuke.koru.graphics.FacetList;
+import io.anuke.koru.graphics.Sorter;
+import java.util.function.Predicate;
+
+import io.anuke.koru.graphics.lsystems.KoruLSystem;
+import arc.func.Cons;
+import arc.math.geom.Geometry;
+import arc.math.Mathf;
 
 public class MaterialTypes{
 	public static final Color grasscolor = new Color(0x62962fff);
@@ -78,7 +78,7 @@ public class MaterialTypes{
 		}
 		
 		public void drawTile(Tile tile){
-			Draw.rect(name + ((int)(Timers.time()/10f) % variants)+1, tile.worldx(), tile.worldy());
+			Draw.rect(name + ((int)(arc.util.Time.time/10f) % variants)+1, tile.worldx(), tile.worldy());
 		}
 	}
 	
@@ -170,7 +170,7 @@ public class MaterialTypes{
 
 					int dir = 0;
 
-					for(GridPoint2 point : Geometry.getD4Points()){
+					for(Point2 point : Geometry.getD4Points()){
 						Tile other = Koru.world.getTile(tile.x + point.x, tile.y + point.y);
 						if(other == null || !blendWith.test(other.wall())){
 							Draw.rect(edge + "edge", posx, posy, dir * 90);
@@ -181,7 +181,7 @@ public class MaterialTypes{
 
 					dir = 0;
 
-					for(GridPoint2 point : Geometry.getD8EdgePoints()){
+					for(Point2 point : Geometry.getD8EdgePoints()){
 						Tile other = Koru.world.getTile(tile.x + point.x, tile.y + point.y);
 						if(other == null || !blendWith.test(other.wall())){
 							Draw.rect(edge + "edgecorner", posx, posy, dir * 90);
@@ -220,10 +220,10 @@ public class MaterialTypes{
 		}
 		
 		@Override
-		public void onInteract(Tile tile, Spark entity){
-			entity.get(InventoryTrait.class).addItems(getDrops());
-			entity.get(InventoryTrait.class).sendUpdate(entity);
-				
+		public void onInteract(Tile tile, Entity entity){
+			entity.inventory.addItems(getDrops());
+			entity.inventory.sendUpdate(entity);
+
 			tile.setWall(Materials.air);
 		}
 	}
@@ -233,7 +233,8 @@ public class MaterialTypes{
 		protected Tree(String name) {
 			super(name, MaterialLayer.wall);
 			cullSize = 180;
-			color = Hue.rgb(80, 53, 30).mul(1.5f);
+			arc.graphics.Color hue = new arc.graphics.Color(80/255f, 53/255f, 30/255f, 1f).mul(1.5f);
+			color = new Color(hue.r, hue.g, hue.b, hue.a);
 			hitbox.width = 7;
 			hitbox.height = 3;
 			solid = true;
@@ -250,7 +251,7 @@ public class MaterialTypes{
 			
 			//skewing, "swaying"
 			facet.update(()->{
-				float time = (Timers.time() + (tile.x + tile.y)*4f) / 40f;
+				float time = (arc.util.Time.time + (tile.x + tile.y)*4f) / 40f;
 				int scl = (int)(time / Math.PI);
 				float intensity = Mathf.sin(scl*10, 1f, 4f);
 				
@@ -329,7 +330,7 @@ public class MaterialTypes{
 		public void draw(Tile tile, FacetList list){
 			float yadd = 0;
 			
-			Vector3 tint = tile.topFloor().foilageTint();
+			Vec3 tint = tile.topFloor().foilageTint();
 			
 			int blend = blendStage(tile.x, tile.y);
 			
@@ -376,7 +377,7 @@ public class MaterialTypes{
 		public void draw(Tile tile, FacetList list){
 			float xadd = 0;
 			
-			Vector3 tint = tile.topFloor().foilageTint();
+			Vec3 tint = tile.topFloor().foilageTint();
 			
 			int iter = 4;
 			
@@ -412,7 +413,8 @@ public class MaterialTypes{
 		protected LSystemTree(String name) {
 			super(name, MaterialLayer.wall);
 			cullSize = 80;
-			color = Hue.rgb(80, 53, 30).mul(1.5f);
+			arc.graphics.Color hue = new arc.graphics.Color(80/255f, 53/255f, 30/255f, 1f).mul(1.5f);
+			color = new Color(hue.r, hue.g, hue.b, hue.a);
 			hitbox.width = 6;
 			hitbox.height = 2;
 			solid = true;
@@ -425,7 +427,7 @@ public class MaterialTypes{
 			int variant = tile.rand(variants) - 1;
 			
 			list.add(new BaseFacet(tile.worldy(), Sorter.object, d->{
-				LSystem system = LSystems.getSystems(name)[variant];
+				KoruLSystem system = LSystems.getSystems(name)[variant];
 				system.timeOffset = tile.randFloat(2) * 9999f;
 				system.x = tile.worldx();
 				system.y = tile.worldy();

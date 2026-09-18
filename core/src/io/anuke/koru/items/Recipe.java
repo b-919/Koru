@@ -1,9 +1,9 @@
 package io.anuke.koru.items;
 
-import com.badlogic.gdx.utils.Array;
+import arc.struct.Seq;
 
 public class Recipe{
-	private static Array<Recipe> recipes = new Array<>();
+	private static Seq<Recipe> recipes = new Seq<>();
 	private static int lastid;
 	
 	private final int id;
@@ -35,7 +35,7 @@ public class Recipe{
 		return recipes.get(id);
 	}
 	
-	public static Array<Recipe> getAll(){
+	public static Seq<Recipe> getAll(){
 		return recipes;
 	}
 	

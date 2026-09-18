@@ -1,11 +1,11 @@
 package io.anuke.koru.items;
 
-import com.badlogic.gdx.utils.Array;
+import arc.struct.Seq;
 
 import io.anuke.koru.world.materials.Material;
 
 public class BlockRecipe{
-	private static Array<BlockRecipe> recipes = new Array<>();
+	private static Seq<BlockRecipe> recipes = new Seq<>();
 	private static int lastid;
 	
 	private final int id;
@@ -40,7 +40,7 @@ public class BlockRecipe{
 		return recipes.get(id);
 	}
 	
-	public static Array<BlockRecipe> getAll(){
+	public static Seq<BlockRecipe> getAll(){
 		return recipes;
 	}
 	

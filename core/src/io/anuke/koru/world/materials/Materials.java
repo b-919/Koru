@@ -1,12 +1,12 @@
 package io.anuke.koru.world.materials;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Vector3;
+import arc.graphics.Color;
+import arc.math.geom.Vec3;
 
 import io.anuke.koru.items.impl.Items;
 import io.anuke.koru.world.Tile;
 import io.anuke.koru.world.materials.MaterialTypes.*;
-import io.anuke.ucore.facet.FacetList;
+import io.anuke.koru.graphics.FacetList;
 
 /**Natural materials generated in the world.*/
 public class Materials{
@@ -24,7 +24,7 @@ public class Materials{
 	}},
 	
 	darkgrass = new Grass("grass"){{
-		foilageTint = new Vector3(0.8f, 0.92f, 0.86f);
+		foilageTint = new Vec3(0.8f, 0.92f, 0.86f);
 	}},
 	
 	swampgrass = new Grass("grass"){{
@@ -32,11 +32,11 @@ public class Materials{
 	}},
 	
 	drygrass = new Grass("grass"){{
-		foilageTint = new Vector3(1.3f, 1.1f, 0.98f);
+		foilageTint = new Vec3(1.3f, 1.1f, 0.98f);
 	}},
 	
 	burntgrass = new Grass("grass"){{
-		foilageTint = new Vector3(1.6f, 1.2f, 0.94f);
+		foilageTint = new Vec3(1.6f, 1.2f, 0.94f);
 	}},
 	
 	bluegrass = new Grass("grass"){{

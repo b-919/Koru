@@ -1,16 +1,14 @@
 package io.anuke.koru.server.world;
 
-import static io.anuke.ucore.util.Mathf.clamp;
+import static arc.math.Mathf.clamp;
 
-import com.badlogic.gdx.utils.Array;
+import arc.struct.Seq;
 
 import io.anuke.koru.world.Generator;
 import io.anuke.koru.world.Tile;
 import io.anuke.koru.world.materials.Material;
 import io.anuke.koru.world.materials.Materials;
-import io.anuke.ucore.noise.RidgedPerlin;
-import io.anuke.ucore.noise.Simplex;
-import io.anuke.ucore.util.Mathf;
+import arc.math.Mathf;
 
 public class EntryTerrainGenerator implements Generator{
 	Simplex tnoise = new Simplex();
@@ -24,7 +22,7 @@ public class EntryTerrainGenerator implements Generator{
 	float negationOffset = 9999999;
 	float riverThreshold = 0.616f;
 
-	Array<Entry> entries = Array.with(
+	Seq<Entry> entries = Seq.with(
 		new Entry(Materials.pinetree, 0.04f, 0.1f, 0.25f, 0.7f, 0.2f), 
 		new Entry(Materials.pinesapling, 0.01f, 0.1f, 0.1f, 0.7f, 0.1f), 
 		new Entry(Materials.pinecones, 0.01f, 0.1f, 0.1f, 0.7f, 0.1f), 

@@ -1,29 +1,30 @@
 package io.anuke.koru.server.world;
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Pixmap.Format;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
-import com.badlogic.gdx.utils.IntIntMap;
+import java.nio.ByteBuffer;
+
+import arc.Core;
+import arc.graphics.Color;
+import arc.graphics.Pixmap;
+import arc.graphics.Texture;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.SpriteBatch;
+import arc.input.KeyCode;
+import arc.struct.IntIntMap;
 
 import io.anuke.koru.world.Generator;
 import io.anuke.koru.world.Tile;
 import io.anuke.koru.world.materials.*;
 import io.anuke.koru.world.materials.MaterialTypes.Grass;
 import io.anuke.koru.world.materials.MaterialTypes.Wall;
-import io.anuke.ucore.core.Graphics;
-import io.anuke.ucore.graphics.Atlas;
-import io.anuke.ucore.noise.RidgedPerlin;
-import io.anuke.ucore.noise.VoronoiNoise;
-import io.anuke.ucore.util.GridMap;
-import io.anuke.ucore.util.Tmp;
+import arc.Core;
+import arc.graphics.g2d.TextureAtlas;
+import arc.util.noise.VoronoiNoise;
+import arc.struct.GridMap;
+import arc.struct.ObjectMap;
+import arc.files.Fi;
+import arc.util.Tmp;
 
-public class MapPreview extends ApplicationAdapter{
+public class MapPreview implements arc.ApplicationListener{
 	boolean isHome = System.getProperty("user.name").equals("anuke");
 	String atlasDir = System.getProperty("user.home") + (isHome ? "/Projects/Koru/core/assets/sprites/sprites.atlas" : "/Documents/GitHub/Koru/core/assets/sprites/sprites.atlas");
 	Generator gen;
@@ -40,15 +41,14 @@ public class MapPreview extends ApplicationAdapter{
 	static double maxe;
 	static double maxt;
 
-	public void create(){
+	public void init(){
 		batch = new SpriteBatch();
 		gen = new EntryTerrainGenerator();
 		
-		//Gdx.graphics.setContinuousRendering(false);
+		//Core.graphics.setContinuousRendering(false);
 
-		Atlas atlas = new Atlas(Gdx.files.absolute(atlasDir));
-
-		Pixmap pixmap = atlas.getPixmapOf(atlas.findRegion("grass"));
+		TextureAtlas.TextureAtlasData data = new TextureAtlas.TextureAtlasData(new Fi(atlasDir), new Fi(atlasDir).parent(), false);
+		ObjectMap<TextureAtlas.TextureAtlasData.AtlasPage, Pixmap> pixmapCache = new ObjectMap<>();
 
 		for(Material material : Material.getAll()){
 			if(!material.isLayer(MaterialLayer.floor) && !(material instanceof Wall))
@@ -59,11 +59,18 @@ public class MapPreview extends ApplicationAdapter{
 						MaterialTypes.grasscolor.g * material.foilageTint().y,
 						MaterialTypes.grasscolor.b * material.foilageTint().z, 1f);
 				
-				colors.put(material.id(), Color.rgba8888(color));
+				colors.put(material.id(), Color.rgba8888(color.r, color.g, color.b, color.a));
 			}else{
-			
-				AtlasRegion region = atlas.findRegion(material.name());
-				colors.put(material.id(), pixmap.getPixel(region.getRegionX(), region.getRegionY()));
+				for(TextureAtlas.TextureAtlasData.Region region : data.getRegions()){
+					if(!region.name.equals(material.name())) continue;
+					Pixmap page = pixmapCache.get(region.page);
+					if(page == null){
+						page = new Pixmap(region.page.textureFile);
+						pixmapCache.put(region.page, page);
+					}
+					colors.put(material.id(), page.get(region.left, region.top));
+					break;
+				}
 			}
 		}
 
@@ -73,44 +80,43 @@ public class MapPreview extends ApplicationAdapter{
 			}
 		}
 		
-		colors.put(Materials.floweryellow.id(), Color.rgba8888(Color.YELLOW));
-		colors.put(Materials.flowerblue.id(), Color.rgba8888(Color.ROYAL));
-		colors.put(Materials.flowerpurple.id(), Color.rgba8888(Color.PURPLE));
-		colors.put(Materials.flowerred.id(), Color.rgba8888(Color.RED));
+		colors.put(Materials.floweryellow.id(), Color.rgba8888(Color.yellow.r, Color.yellow.g, Color.yellow.b, Color.yellow.a));
+		colors.put(Materials.flowerblue.id(), Color.rgba8888(Color.royal.r, Color.royal.g, Color.royal.b, Color.royal.a));
+		colors.put(Materials.flowerpurple.id(), Color.rgba8888(Color.purple.r, Color.purple.g, Color.purple.b, Color.purple.a));
+		colors.put(Materials.flowerred.id(), Color.rgba8888(Color.red.r, Color.red.g, Color.red.b, Color.red.a));
 	}
 
-	public void render(){
-		if(Gdx.input.isKeyPressed(Keys.ESCAPE))
-			Gdx.app.exit();
+	public void update(){
+		if(Core.input.keyDown(KeyCode.escape))
+			Core.app.exit();
 
-		float speed = Gdx.input.isKeyPressed(Keys.SHIFT_LEFT) ? this.speed * 5 : this.speed;
+		float speed = Core.input.keyDown(KeyCode.shiftLeft) ? this.speed * 5 : this.speed;
 
-		if(Gdx.input.isKeyPressed(Keys.W))
+		if(Core.input.keyDown(KeyCode.w))
 			vy += speed;
-		if(Gdx.input.isKeyPressed(Keys.A))
+		if(Core.input.keyDown(KeyCode.a))
 			vx -= speed;
-		if(Gdx.input.isKeyPressed(Keys.S))
+		if(Core.input.keyDown(KeyCode.s))
 			vy -= speed;
-		if(Gdx.input.isKeyPressed(Keys.D))
+		if(Core.input.keyDown(KeyCode.d))
 			vx += speed;
 
-		Graphics.clear(Color.BLACK);
-		batch.begin();
-
-		int viewx = (int) (vx / pixsize);
-		int viewy = (int) (vy / pixsize);
-		for(int x = -viewrange + viewx; x <= viewrange + viewx; x++){
-			for(int y = -viewrange + viewy; y <= viewrange + viewy; y++){
-				ChunkPix pix = blocks.get(x, y);
-				if(pix != null){
-					batch.draw(pix.texture, x * pixsize * scl + Gdx.graphics.getWidth() / 2 - vx*scl,
-							y * pixsize * scl + Gdx.graphics.getHeight() / 2 - vy*scl, pixsize * scl, pixsize * scl);
-				}else{
-					gen(x, y);
+		Core.graphics.clear(0f, 0f, 0f, 1f);
+		Draw.batch(batch, () -> {
+			int viewx = (int) (vx / pixsize);
+			int viewy = (int) (vy / pixsize);
+			for(int x = -viewrange + viewx; x <= viewrange + viewx; x++){
+				for(int y = -viewrange + viewy; y <= viewrange + viewy; y++){
+					ChunkPix pix = blocks.get(x, y);
+					if(pix != null){
+						Draw.rect(Draw.wrap(pix.texture), x * pixsize * scl + Core.graphics.getWidth() / 2 - vx*scl,
+								y * pixsize * scl + Core.graphics.getHeight() / 2 - vy*scl, pixsize * scl, pixsize * scl);
+					}else{
+						gen(x, y);
+					}
 				}
 			}
-		}
-		batch.end();
+		});
 	}
 
 	void gen(int x, int y){
@@ -118,9 +124,7 @@ public class MapPreview extends ApplicationAdapter{
 	}
 	
 
-	VoronoiNoise noise = new VoronoiNoise(0,(short) 0){{
-		this.setUseDistance(true);
-	}};
+	VoronoiNoise noise = new VoronoiNoise(0, true);
 	
 	RidgedPerlin per = new RidgedPerlin(1, 1, 0.4f);
 	
@@ -133,7 +137,7 @@ public class MapPreview extends ApplicationAdapter{
 		if(tile.wall() instanceof Wall){
 			temp.set(colors.get(tile.wallid, 0));
 			temp.mul(light, light, light, 1f);
-			return Color.rgba8888(temp);
+			return Color.rgba8888(temp.r, temp.g, temp.b, temp.a);
 		}
 		
 		if(!tile.isWallEmpty()){
@@ -142,13 +146,13 @@ public class MapPreview extends ApplicationAdapter{
 			}
 			temp.set(colors.get(tile.topFloor().id(), 0)+1000);
 			temp.mul(light, light, light, 1f);
-			return Color.rgba8888(temp);
+			return Color.rgba8888(temp.r, temp.g, temp.b, temp.a);
 		}
 		
 		temp.set(colors.get(tile.topFloor().id(), 0));
 		temp.mul(light, light, light, 1f);
 		
-		return Color.rgba8888(temp);
+		return Color.rgba8888(temp.r, temp.g, temp.b, temp.a);
 	}
 
 	class ChunkPix{
@@ -156,20 +160,29 @@ public class MapPreview extends ApplicationAdapter{
 		Texture texture;
 
 		public ChunkPix(int x, int y) {
-			pixmap = new Pixmap(pixsize/percision, pixsize/percision, Format.RGBA8888);
+			pixmap = new Pixmap(pixsize/percision, pixsize/percision);
 			
 			for(int px = 0; px < pixmap.getWidth(); px++){
 				for(int py = 0; py < pixmap.getHeight(); py++){
 
 					
-					pixmap.drawPixel(px, (pixmap.getHeight() - 1 - py), getPix(x * pixsize + px * percision, y * pixsize + py * percision));
+					setPixel(pixmap, px, (pixmap.getHeight() - 1 - py), getPix(x * pixsize + px * percision, y * pixsize + py * percision));
 				}
 			}
-			texture = new Texture(pixmap);
+texture = new Texture(pixmap);
 		}
 	}
 
-	public void resize(int width, int height){
-		batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+	static void setPixel(Pixmap pixmap, int x, int y, int color){
+		ByteBuffer buf = pixmap.getPixels();
+		int i = (y * pixmap.getWidth() + x) * 4;
+		buf.put(i, (byte)(color >>> 24));
+		buf.put(i + 1, (byte)(color >>> 16));
+		buf.put(i + 2, (byte)(color >>> 8));
+		buf.put(i + 3, (byte)color);
+	}
+
+public void resize(int width, int height){
+		Draw.proj(0, 0, width, height);
 	}
 }
