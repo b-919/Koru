@@ -1,5 +1,7 @@
 package io.anuke.koru.entities;
 
+import io.anuke.koru.graphics.Effects;
+
 public abstract class ProjectileType{
 	public float lifetime = 100;
 	public float speed = 1;
@@ -17,12 +19,12 @@ public abstract class ProjectileType{
 
 	/** Called when the projectile hits an entity. */
 	public void removed(Entity entity){
-		// TODO spawn hiteffect once Effects subsystem is ported
+		if(hiteffect != null) Effects.effect(Effects.getEffect(hiteffect), entity.pos.x, entity.pos.y);
 	}
 
 	/** Called when the projectile is despawned (lifetime expired). */
 	public void despawned(Entity entity){
-		// TODO spawn despawneffect once Effects subsystem is ported
+		if(despawneffect != null) Effects.effect(Effects.getEffect(despawneffect), entity.pos.x, entity.pos.y);
 	}
 }
 

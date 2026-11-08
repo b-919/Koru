@@ -1,7 +1,6 @@
 package io.anuke.koru.network.syncing;
 
 import arc.math.Interp;
-import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.util.Time;
 
@@ -27,8 +26,6 @@ public class Interpolator{
 			e.pos.set(x, y);
 			lastx = 0;
 			lasty = 0;
-		}else if(Mathf.dst(e.pos.x, e.pos.y, x, y) < 0.15f){
-			//e.pos.set(x, y);
 		}
 	}
 

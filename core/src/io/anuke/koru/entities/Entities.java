@@ -38,7 +38,10 @@ public class Entities{
 
 	public synchronized void addEntity(Entity entity){
 		if(entity.id == -1){
+			while(byId.get(lastID) != null) lastID++;
 			entity.id = lastID++;
+		}else{
+			lastID = Math.max(lastID, entity.id + 1);
 		}
 
 		byId.put(entity.id, entity);
@@ -78,6 +81,7 @@ public class Entities{
 		entities.clear();
 		byId.clear();
 		cells.clear();
+		lastID = 1;
 	}
 
 	public void update(){

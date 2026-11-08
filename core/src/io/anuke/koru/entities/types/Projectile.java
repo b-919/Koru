@@ -50,7 +50,6 @@ public class Projectile extends Entity{
 		if(type != null) type.draw(this);
 	}
 
-	/**Shortcut method.*/
 	public static Projectile create(ProjectileType type, Entity source, float x, float y, float angle){
 		return create(type, source, -1, x, y, angle);
 	}

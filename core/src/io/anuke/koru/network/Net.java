@@ -7,7 +7,6 @@ import arc.net.FrameworkMessage;
 import io.anuke.koru.Koru;
 import io.anuke.koru.entities.Entity;
 
-//TODO implement everything
 public class Net{
 	private static boolean server;
 	private static NetProvider provider;

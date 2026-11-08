@@ -57,6 +57,11 @@ public class Player extends Entity{
 	}
 
 	@Override
+	public void drawShadow(){
+		Drawf.shadow(this, 14, 1, true);
+	}
+
+	@Override
 	public void draw(){
 		Draw.z(pos().y + 1f);
 
@@ -68,7 +73,7 @@ public class Player extends Entity{
 
 		Direction dir = this.direction;
 
-		Draw.rect("crab-" + (dir == Direction.left || dir == Direction.right ? "s" : dir == Direction.back ? "b" : "f")
+		Draw.grect("crab-" + (dir == Direction.left || dir == Direction.right ? "s" : dir == Direction.back ? "b" : "f")
 				+ (walktime > 0 ? "-" + ((int) (walktime / 7)) % 3 : ""),
 				pos().x, pos().y, dir == Direction.left ? -12 : 12, 12);
 
@@ -90,8 +95,6 @@ public class Player extends Entity{
 
 		pos().x = x;
 		pos().y = y;
-
-		Drawf.shadow(this, 14, 1, true);
 	}
 }
 

@@ -8,6 +8,7 @@ import arc.graphics.g2d.TextureRegion;
 import arc.util.Disposable;
 import arc.util.ScreenUtils;
 import io.anuke.koru.graphics.Draw;
+import io.anuke.koru.graphics.Graphics;
 import arc.util.Time;
 
 public class KoruLSystem extends LSystem implements Disposable{
@@ -24,7 +25,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 	private int seed = Mathf.random(9999);
 	private boolean sortAscending = false;
 	private boolean sortCircles = false;
-	
+
 	public float colorStep = 0.3f;
 	public float trunkHeight = 0f;
 	public arc.graphics.Color leafColor;
@@ -42,7 +43,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 	public String getInstructions(){
 		return string;
 	}
-	
+
 	public boolean isDrawn(){
 		return drawn;
 	}
@@ -95,11 +96,10 @@ public class KoruLSystem extends LSystem implements Disposable{
 			int boundGrow = 7;
 			float minx = 999,  maxx = -999, maxy = -999;
 			int screenX = 0, screenY = 0, screenWidth = 0, screenHeight = 0;
-			
-			//Graphics.setScreen();
-			//Graphics.surface("trees");
-			//Graphics.clear(arc.graphics.Color.clear);
-			
+
+			Graphics.setScreen();
+			Graphics.surface("trees");
+
 			for(int i = -1; i < frames; i++){
 				time = (float) Math.max(i, 0) / frames * phase;
 
@@ -107,7 +107,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 
 				if(i != -1){
 					Core.graphics.clear(arc.graphics.Color.clear);
-					
+
 					float xoff = Core.graphics.getWidth()/2;
 					float yoff = Core.graphics.getHeight()/2;
 					Draw.color(data.start);
@@ -115,7 +115,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 
 					for(LTree.Line line : lines){
 						float s = 1f - (float) line.stack / maxstack;
-						
+
 						Draw.thickness(data.thickness + s * 1f);
 						Draw.color(data.start, data.end, (float) line.stack / maxstack);
 						Draw.line(line.x1 + xoff, line.y1 + yoff, line.x2 + xoff, line.y2 + yoff);
@@ -132,8 +132,8 @@ public class KoruLSystem extends LSystem implements Disposable{
 					}
 
 					Draw.color();
-					//Graphics.flush();
-					
+					Graphics.end();
+
 					TextureRegion region = ScreenUtils.getFrameBufferTexture(screenX, screenY, screenWidth, screenHeight);
 					regions[i] = region;
 					if(i == 0 && writeOut){
@@ -141,18 +141,18 @@ public class KoruLSystem extends LSystem implements Disposable{
 						arc.graphics.PixmapIO.writePng(Core.files.local("trees/tree" + Mathf.random(99999) + ".png"), pixmap);
 						pixmap.dispose();
 					}
-					
+
 				}else{
 					for(LTree.Line line : lines){
 						minx = Math.min(line.x1, minx);
 						minx = Math.min(line.x2, minx);
-						
+
 						maxx = Math.max(line.x1, maxx);
 						maxx = Math.max(line.x2, maxx);
 						maxy = Math.max(line.y1, maxy);
 						maxy = Math.max(line.y2, maxy);
 					}
-					
+
 					screenX = (int)minx - boundGrow + Core.graphics.getWidth()/2;
 					screenY = Core.graphics.getHeight()/2 - 2;
 					screenWidth = (int)(maxx - minx) + boundGrow * 2;
@@ -160,10 +160,9 @@ public class KoruLSystem extends LSystem implements Disposable{
 					offsetx = ((screenX + screenWidth) + screenX)/2 - Core.graphics.getWidth()/2;
 				}
 			}
-			
-			//Graphics.end();
-			//Graphics.beginCam();
-			//Graphics.surface();
+
+			Graphics.surface();
+			Graphics.beginCam();
 
 			drawn = true;
 		}else{
@@ -180,6 +179,7 @@ public class KoruLSystem extends LSystem implements Disposable{
 	protected void recache(){
 		circles.clear();
 		lines.clear();
+		stack.clear();
 
 		angle = 90;
 		lastx = lasty = 0;
@@ -187,6 +187,10 @@ public class KoruLSystem extends LSystem implements Disposable{
 		for(int i = 0; i < string.length(); i++){
 			drawc(string.charAt(i));
 		}
+
+		maxstack = 0;
+		for(LTree.Line line : lines) maxstack = Math.max(maxstack, line.stack);
+		maxstack = Math.max(1, maxstack);
 
 		lines.sort();
 		if(sortCircles) circles.sort((v1, v2) -> sortAscending ? Float.compare(v1.z, v2.z) : Float.compare(v2.z, v1.z));

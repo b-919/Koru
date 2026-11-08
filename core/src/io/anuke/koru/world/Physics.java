@@ -4,9 +4,8 @@ import arc.math.geom.Vec2;
 
 import io.anuke.koru.Koru;
 
-//TODO add funcionality
 public class Physics{
-	
+
 	public static boolean cast(float x0f, float y0f, float x1f, float y1f){
 		int x0 = (int)x0f;
 		int y0 = (int)y0f;
@@ -74,7 +73,7 @@ public class Physics{
 		}
 		return null;
 	}
-	
+
 	public static boolean solid(float x, float y){
 		return Koru.world.positionSolid(x, y);
 	}

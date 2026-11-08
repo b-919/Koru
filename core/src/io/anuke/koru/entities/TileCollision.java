@@ -1,14 +1,10 @@
 package io.anuke.koru.entities;
 
-import arc.math.Mathf;
 import arc.math.geom.Rect;
 
-/**
- * Simplified port of the uCore {@code TileCollisionProcessor} (jBump based).
- * Provides axis-separated sliding collision against solid world tiles.
- * Configured once at init with the world tilesize, collider and hitbox
- * provider, mirroring the original wiring.
- */
+import io.anuke.koru.modules.World;
+
+/** Axis-separated sliding collision against solid world tiles. Tiles are centered on their world coordinates. */
 public class TileCollision{
 	public static float tilesize;
 	public static TileCollider collider;
@@ -23,6 +19,7 @@ public class TileCollision{
 	}
 
 	private static final int[] result = new int[2];
+	private static final Rect blockTmp = new Rect();
 
 	/** Fires the tile-collision event for the entity if its box is overlapping a solid tile. */
 	public static void check(Entity entity){
@@ -45,51 +42,85 @@ public class TileCollision{
 	private static void moveAxis(Entity entity, float amount, boolean xAxis){
 		if(Math.abs(amount) < 0.0001f) return;
 
-		float nx = xAxis ? entity.pos.x + amount : entity.pos.x;
-		float ny = xAxis ? entity.pos.y : entity.pos.y + amount;
+		float ox = entity.pos.x, oy = entity.pos.y;
+		float hx = entity.tcolWidth / 2f, hy = entity.tcolHeight / 2f;
+		float offX = entity.tcolOffsetX, offY = entity.tcolOffsetY;
 
-		Rect moved = new Rect().setSize(entity.tcolWidth, entity.tcolHeight).setCenter(
-				nx + entity.tcolOffsetX, ny + entity.tcolOffsetY);
-
-		int minTx = Mathf.floor(moved.x / tilesize), maxTx = Mathf.floor((moved.x + moved.width) / tilesize);
-		int minTy = Mathf.floor(moved.y / tilesize), maxTy = Mathf.floor((moved.y + moved.height) / tilesize);
-
-		for(int tx = minTx; tx <= maxTx; tx++){
-			for(int ty = minTy; ty <= maxTy; ty++){
-				if(collider != null && !collider.solid(tx, ty)) continue;
-
-				Rect block = new Rect();
-				if(hitbox != null){
-					hitbox.getHitbox(tx, ty, block);
-				}else{
-					block.set(tx * tilesize, ty * tilesize, tilesize, tilesize);
-				}
-
-				if(!moved.overlaps(block)) continue;
-
-				if(xAxis){
-					if(amount > 0){
-						entity.pos.x = block.x - entity.tcolOffsetX - entity.tcolWidth / 2;
-					}else{
-						entity.pos.x = block.x + block.width - entity.tcolOffsetX + entity.tcolWidth / 2;
-					}
-					entity.velocity.x = 0;
-				}else{
-					if(amount > 0){
-						entity.pos.y = block.y - entity.tcolOffsetY - entity.tcolHeight / 2;
-					}else{
-						entity.pos.y = block.y + block.height - entity.tcolOffsetY + entity.tcolHeight / 2;
-					}
-					entity.velocity.y = 0;
-				}
-				return;
-			}
-		}
+		float left = ox + offX - hx, bottom = oy + offY - hy;
+		float right = left + entity.tcolWidth, top = bottom + entity.tcolHeight;
 
 		if(xAxis){
-			entity.pos.x = nx;
+			int minTx = World.tile(Math.min(left, left + amount)) - 1;
+			int maxTx = World.tile(Math.max(right, right + amount)) + 1;
+			int minTy = World.tile(bottom) - 1;
+			int maxTy = World.tile(top) + 1;
+
+			float nearest = amount > 0 ? Float.MAX_VALUE : -Float.MAX_VALUE;
+			boolean hit = false;
+
+			for(int tx = minTx; tx <= maxTx; tx++){
+				for(int ty = minTy; ty <= maxTy; ty++){
+					if(!solid(tx, ty)) continue;
+
+					Rect block = getHitbox(tx, ty);
+					if(block.y >= top - 0.0001f || block.y + block.height <= bottom + 0.0001f) continue;
+
+					if(amount > 0){
+						if(block.x >= right - 0.0001f || block.x + block.width > left + 0.0001f){
+							nearest = Math.min(nearest, block.x);
+							hit = true;
+						}
+					}else{
+						if(block.x + block.width <= left + 0.0001f || block.x < right - 0.0001f){
+							nearest = Math.max(nearest, block.x + block.width);
+							hit = true;
+						}
+					}
+				}
+			}
+
+			if(hit){
+				entity.pos.x = amount > 0 ? nearest - offX - hx : nearest - offX + hx;
+				entity.velocity.x = 0;
+			}else{
+				entity.pos.x = ox + amount;
+			}
 		}else{
-			entity.pos.y = ny;
+			int minTx = World.tile(left) - 1;
+			int maxTx = World.tile(right) + 1;
+			int minTy = World.tile(Math.min(bottom, bottom + amount)) - 1;
+			int maxTy = World.tile(Math.max(top, top + amount)) + 1;
+
+			float nearest = amount > 0 ? Float.MAX_VALUE : -Float.MAX_VALUE;
+			boolean hit = false;
+
+			for(int tx = minTx; tx <= maxTx; tx++){
+				for(int ty = minTy; ty <= maxTy; ty++){
+					if(!solid(tx, ty)) continue;
+
+					Rect block = getHitbox(tx, ty);
+					if(block.x >= right - 0.0001f || block.x + block.width <= left + 0.0001f) continue;
+
+					if(amount > 0){
+						if(block.y >= top - 0.0001f || block.y + block.height > bottom + 0.0001f){
+							nearest = Math.min(nearest, block.y);
+							hit = true;
+						}
+					}else{
+						if(block.y + block.height <= bottom + 0.0001f || block.y < top - 0.0001f){
+							nearest = Math.max(nearest, block.y + block.height);
+							hit = true;
+						}
+					}
+				}
+			}
+
+			if(hit){
+				entity.pos.y = amount > 0 ? nearest - offY - hy : nearest - offY + hy;
+				entity.velocity.y = 0;
+			}else{
+				entity.pos.y = oy + amount;
+			}
 		}
 	}
 
@@ -98,21 +129,14 @@ public class TileCollision{
 		Rect rect = new Rect().setSize(entity.tcolWidth, entity.tcolHeight).setCenter(
 				x + entity.tcolOffsetX, y + entity.tcolOffsetY);
 
-		int minTx = Mathf.floor(rect.x / tilesize), maxTx = Mathf.floor((rect.x + rect.width) / tilesize);
-		int minTy = Mathf.floor(rect.y / tilesize), maxTy = Mathf.floor((rect.y + rect.height) / tilesize);
+		int minTx = World.tile(rect.x) - 1, maxTx = World.tile(rect.x + rect.width) + 1;
+		int minTy = World.tile(rect.y) - 1, maxTy = World.tile(rect.y + rect.height) + 1;
 
 		for(int tx = minTx; tx <= maxTx; tx++){
 			for(int ty = minTy; ty <= maxTy; ty++){
-				if(collider != null && !collider.solid(tx, ty)) continue;
+				if(!solid(tx, ty)) continue;
 
-				Rect block = new Rect();
-				if(hitbox != null){
-					hitbox.getHitbox(tx, ty, block);
-				}else{
-					block.set(tx * tilesize, ty * tilesize, tilesize, tilesize);
-				}
-
-				if(rect.overlaps(block)){
+				if(rect.overlaps(getHitbox(tx, ty))){
 					out[0] = tx;
 					out[1] = ty;
 					return true;
@@ -121,6 +145,16 @@ public class TileCollision{
 		}
 		return false;
 	}
+
+	private static boolean solid(int x, int y){
+		return collider != null && collider.solid(x, y);
+	}
+
+	private static Rect getHitbox(int x, int y){
+		blockTmp.set(x * tilesize - tilesize / 2f, y * tilesize - tilesize / 2f, tilesize, tilesize);
+		if(hitbox != null){
+			hitbox.getHitbox(x, y, blockTmp);
+		}
+		return blockTmp;
+	}
 }
-
-

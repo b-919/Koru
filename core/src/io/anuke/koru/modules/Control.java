@@ -169,7 +169,7 @@ public class Control extends KoruModule implements InputProcessor{
 			LSystems.generate();
 		}
 
-		//TODO keybindings for this as well
+
 		if(keycode.ordinal() >= KeyCode.num1.ordinal() && keycode.ordinal() <= KeyCode.num4.ordinal()){
 			player.inventory.hotbar = keycode.ordinal() - KeyCode.num1.ordinal();
 

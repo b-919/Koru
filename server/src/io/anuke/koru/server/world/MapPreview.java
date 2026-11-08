@@ -3,30 +3,27 @@ package io.anuke.koru.server.world;
 import java.nio.ByteBuffer;
 
 import arc.Core;
+import arc.files.Fi;
 import arc.graphics.Color;
 import arc.graphics.Pixmap;
 import arc.graphics.Texture;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.SpriteBatch;
+import arc.graphics.g2d.TextureAtlas;
 import arc.input.KeyCode;
+import arc.struct.GridMap;
 import arc.struct.IntIntMap;
+import arc.struct.ObjectMap;
+import arc.util.Tmp;
+import arc.util.noise.VoronoiNoise;
 
 import io.anuke.koru.world.Generator;
 import io.anuke.koru.world.Tile;
 import io.anuke.koru.world.materials.*;
 import io.anuke.koru.world.materials.MaterialTypes.Grass;
 import io.anuke.koru.world.materials.MaterialTypes.Wall;
-import arc.Core;
-import arc.graphics.g2d.TextureAtlas;
-import arc.util.noise.VoronoiNoise;
-import arc.struct.GridMap;
-import arc.struct.ObjectMap;
-import arc.files.Fi;
-import arc.util.Tmp;
 
 public class MapPreview implements arc.ApplicationListener{
-	boolean isHome = System.getProperty("user.name").equals("anuke");
-	String atlasDir = System.getProperty("user.home") + (isHome ? "/Projects/Koru/core/assets/sprites/sprites.atlas" : "/Documents/GitHub/Koru/core/assets/sprites/sprites.atlas");
 	Generator gen;
 	GridMap<ChunkPix> blocks = new GridMap<ChunkPix>();
 	IntIntMap colors = new IntIntMap();
@@ -44,21 +41,20 @@ public class MapPreview implements arc.ApplicationListener{
 	public void init(){
 		batch = new SpriteBatch();
 		gen = new EntryTerrainGenerator();
-		
-		//Core.graphics.setContinuousRendering(false);
 
-		TextureAtlas.TextureAtlasData data = new TextureAtlas.TextureAtlasData(new Fi(atlasDir), new Fi(atlasDir).parent(), false);
+		Fi atlasFile = Core.files.internal("sprites/sprites.atlas");
+		TextureAtlas.TextureAtlasData data = new TextureAtlas.TextureAtlasData(atlasFile, atlasFile.parent(), false);
 		ObjectMap<TextureAtlas.TextureAtlasData.AtlasPage, Pixmap> pixmapCache = new ObjectMap<>();
 
 		for(Material material : Material.getAll()){
 			if(!material.isLayer(MaterialLayer.floor) && !(material instanceof Wall))
 				continue;
-			
+
 			if(material instanceof Grass){
 				Color color = Tmp.c1.set(MaterialTypes.grasscolor.r * material.foilageTint().x,
 						MaterialTypes.grasscolor.g * material.foilageTint().y,
 						MaterialTypes.grasscolor.b * material.foilageTint().z, 1f);
-				
+
 				colors.put(material.id(), Color.rgba8888(color.r, color.g, color.b, color.a));
 			}else{
 				for(TextureAtlas.TextureAtlasData.Region region : data.getRegions()){
@@ -79,7 +75,7 @@ public class MapPreview implements arc.ApplicationListener{
 				gen(x, y);
 			}
 		}
-		
+
 		colors.put(Materials.floweryellow.id(), Color.rgba8888(Color.yellow.r, Color.yellow.g, Color.yellow.b, Color.yellow.a));
 		colors.put(Materials.flowerblue.id(), Color.rgba8888(Color.royal.r, Color.royal.g, Color.royal.b, Color.royal.a));
 		colors.put(Materials.flowerpurple.id(), Color.rgba8888(Color.purple.r, Color.purple.g, Color.purple.b, Color.purple.a));
@@ -122,24 +118,24 @@ public class MapPreview implements arc.ApplicationListener{
 	void gen(int x, int y){
 		blocks.put(x, y, new ChunkPix(x, y));
 	}
-	
+
 
 	VoronoiNoise noise = new VoronoiNoise(0, true);
-	
+
 	RidgedPerlin per = new RidgedPerlin(1, 1, 0.4f);
-	
+
 	Color temp = new Color();
-	
+
 	int getPix(int x, int y){
 		Tile tile = gen.generate(x, y);
 		float light = showDark ? tile.light() : 1f;
-		
+
 		if(tile.wall() instanceof Wall){
 			temp.set(colors.get(tile.wallid, 0));
 			temp.mul(light, light, light, 1f);
 			return Color.rgba8888(temp.r, temp.g, temp.b, temp.a);
 		}
-		
+
 		if(!tile.isWallEmpty()){
 			if(colors.containsKey(tile.wallid)){
 				return colors.get(tile.wallid, 0);
@@ -148,10 +144,10 @@ public class MapPreview implements arc.ApplicationListener{
 			temp.mul(light, light, light, 1f);
 			return Color.rgba8888(temp.r, temp.g, temp.b, temp.a);
 		}
-		
+
 		temp.set(colors.get(tile.topFloor().id(), 0));
 		temp.mul(light, light, light, 1f);
-		
+
 		return Color.rgba8888(temp.r, temp.g, temp.b, temp.a);
 	}
 
@@ -161,11 +157,11 @@ public class MapPreview implements arc.ApplicationListener{
 
 		public ChunkPix(int x, int y) {
 			pixmap = new Pixmap(pixsize/percision, pixsize/percision);
-			
+
 			for(int px = 0; px < pixmap.getWidth(); px++){
 				for(int py = 0; py < pixmap.getHeight(); py++){
 
-					
+
 					setPixel(pixmap, px, (pixmap.getHeight() - 1 - py), getPix(x * pixsize + px * percision, y * pixsize + py * percision));
 				}
 			}

@@ -3,6 +3,7 @@ package io.anuke.koru.entities.types;
 import arc.graphics.Color;
 
 import io.anuke.koru.entities.Entity;
+import io.anuke.koru.graphics.Effects;
 import io.anuke.koru.network.Net;
 
 public class Effect extends Entity{
@@ -21,12 +22,13 @@ public class Effect extends Entity{
 			throw new IllegalArgumentException("Effect entities should not be added serverside!");
 		}
 
-		// TODO: lifetime = Effects.getEffect(effectId).lifetime; once the Effects subsystem is ported.
+		Effects.Effect effect = Effects.getEffect(effectId);
+		if(effect != null) lifetime = effect.lifetime;
 	}
 
 	@Override
 	public void draw(){
-		// TODO: Effects.renderEffect(id, getEffect(effectId), effectColor, life, effectRotation, x, y);
+		Effects.renderEffect(effectId, effectColor, life, effectRotation, pos.x, pos.y);
 	}
 
 	/** Creates an effect entity without adding it to the container.

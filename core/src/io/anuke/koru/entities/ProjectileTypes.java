@@ -1,5 +1,6 @@
 package io.anuke.koru.entities;
 
+import arc.struct.Seq;
 import io.anuke.koru.graphics.Draw;
 
 public class ProjectileTypes{
@@ -27,6 +28,16 @@ public class ProjectileTypes{
 			Draw.color();
 		}
 	};
+
+	private static final Seq<ProjectileType> all = Seq.with(bolt, slash);
+
+	public static int idOf(ProjectileType type){
+		return all.indexOf(type);
+	}
+
+	public static ProjectileType get(int id){
+		return id >= 0 && id < all.size ? all.get(id) : null;
+	}
 }
 
 

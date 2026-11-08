@@ -21,7 +21,6 @@ import io.anuke.koru.world.materials.MaterialTypes.Wall;
 import io.anuke.koru.world.materials.Materials;
 import io.anuke.koru.graphics.Effects;
 
-//TODO make this less messy
 public class InputHandler{
 	public final static float reach = 75;
 	public float mouseangle;
@@ -36,22 +35,18 @@ public class InputHandler{
 	}
 
 	public void update(float delta){
-		
-		
-		//weapon updating
 		ItemStack stack = spark.inventory.hotbarStack();
-		
-		// block breaking
+
 		if(key(InputType.leftclick_down)){
 			Tile tile = Koru.world.getTile(blockx, blocky);
 			Material block = tile.wall();
 			Material floor = tile.topFloor();
-			
+
 			Material select = null;
-			
+
 			if(Mathf.dst(World.world(blockx), World.world(blocky), spark.pos.x, spark.pos.y) < reach
 					&& stack != null && stack.item.isType(ItemType.tool)){
-				
+
 				if(stack.breaks(block.breakType()) && block.isBreakable()){
 					select = block;
 				}else if (stack.breaks(floor.breakType()) && floor.isBreakable() && tile.canRemoveTile()){
@@ -60,16 +55,16 @@ public class InputHandler{
 					blockhold = 0;
 					return;
 				}
-				
-				
+
+
 				blockhold += delta * stack.item.getBreakSpeed(select.breakType());
 
 				if((int) (blockhold) % 20 == 1)
-					Effects.effect(Fx.blockparticle, gdxColor(select.getColor()), World.world(blockx), 
+					Effects.effect(Fx.blockparticle, copyColor(select.getColor()), World.world(blockx),
 							select instanceof Wall ? World.world(blocky) - 6.5f : World.world(blocky) - 1f);
 
 				if(blockhold >= select.breaktime()){
-					Effects.effect(Fx.blockbreak, gdxColor(select.getColor()), World.world(blockx), World.world(blocky) - 1);
+					Effects.effect(Fx.blockbreak, copyColor(select.getColor()), World.world(blockx), World.world(blocky) - 1);
 
 					if(select instanceof Tree){
 						BlockAnimation.create(select, World.world(blockx), World.world(blocky) - 1);
@@ -79,13 +74,11 @@ public class InputHandler{
 					spark.inventory.sendUpdate(spark);
 
 					ItemDrop.create(World.world(blockx), World.world(blocky), select.getDrops());
-					
+
 					if(select == floor)
 						tile.removeTile();
 					else
 						tile.setWall(Materials.air);
-
-					// schedule this later.
 
 					Koru.world.updateLater(blockx, blocky);
 					blockhold = 0;
@@ -98,7 +91,7 @@ public class InputHandler{
 		}else{
 			blockhold = 0;
 		}
-		
+
 	}
 
 	public void inputEvent(InputType type, Object... data){
@@ -115,15 +108,14 @@ public class InputHandler{
 	}
 
 	private void tileDownEvent(){
-		// block place check
 		ItemStack stack = spark.inventory.hotbarStack();
 
 		if(stack == null)
 			return;
 
 		Item item = stack.item;
-		
-		
+
+
 		if(item.isType(ItemType.placer)){
 
 			Tile tile = Koru.world.getTile(blockx, blocky);
@@ -131,21 +123,21 @@ public class InputHandler{
 			InventoryTrait inv = spark.inventory;
 
 			BlockRecipe recipe = null;
-			
+
 			if(inv.recipe != -1) recipe = BlockRecipe.getRecipe(inv.recipe);
-			
+
 			if(spark.pos.dst(World.world(blockx), World.world(blocky)) < reach
 					&& inv.recipe != -1 && inv.hasAll(recipe.requirements())
 					&& World.isPlaceable(recipe.result(), tile)){
-				
+
 				Effects.effect(Fx.blockplace, World.world(blockx), World.world(blocky));
-				
+
 				if(recipe.result().isLayer(MaterialLayer.floor)){
 					tile.addFloor(recipe.result());
 				}else{
 					tile.setWall(recipe.result());
 				}
-				
+
 				Koru.world.updateTile(tile);
 
 				inv.removeAll(recipe.requirements());
@@ -153,13 +145,13 @@ public class InputHandler{
 			}
 		}
 	}
-	
+
 	private void onInteract(){
 		Tile tile = Koru.world.getTile(blockx, blocky);
-		
+
 		if(tile.wall().interactable()){
 			tile.wall().onInteract(tile, spark);
-			
+
 			Koru.world.updateTile(tile);
 		}
 	}
@@ -193,7 +185,7 @@ public class InputHandler{
 			onInteract();
 		}
 	}
-	
+
 
 
 	private void click(boolean down){
@@ -201,7 +193,6 @@ public class InputHandler{
 		if(down)
 			tileDownEvent();
 
-		// fire block click event
 		InventoryTrait inv = spark.inventory;
 		int slot = inv.hotbar;
 		ItemStack stack = inv.inventory[slot];
@@ -214,7 +205,7 @@ public class InputHandler{
 		event.free();
 	}
 
-	static arc.graphics.Color gdxColor(arc.graphics.Color color){
+	static arc.graphics.Color copyColor(arc.graphics.Color color){
 		return new arc.graphics.Color(color.r, color.g, color.b, color.a);
 	}
 

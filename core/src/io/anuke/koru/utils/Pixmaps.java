@@ -5,8 +5,7 @@ import arc.graphics.Color;
 
 public class Pixmaps{
 	public static Pixmap outline(Pixmap pixmap, Color color){
-		//Stub
-		return pixmap.copy();
+		return pixmap.outline(color, 1);
 	}
 
 	public static Pixmap scale(Pixmap pixmap, int scale){

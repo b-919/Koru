@@ -34,39 +34,46 @@ public class Draw{
 	}
 
 	public static void rect(String name, float x, float y){
-		arc.graphics.g2d.Draw.rect(region(name), x, y);
+		TextureRegion region = region(name);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y);
 	}
 
 	public static void rect(String name, float x, float y, float rot){
-		arc.graphics.g2d.Draw.rect(region(name), x, y, rot);
+		TextureRegion region = region(name);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y, rot);
 	}
 
 	public static void rect(String name, float x, float y, float w, float h){
-		arc.graphics.g2d.Draw.rect(region(name), x, y, w, h);
+		TextureRegion region = region(name);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y, w, h);
 	}
 
 	public static void rect(String name, float x, float y, float rot, float w, float h){
-		arc.graphics.g2d.Draw.rect(region(name), x, y, w, h, rot);
+		TextureRegion region = region(name);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y, w, h, rot);
 	}
 
 	public static void rect(TextureRegion region, float x, float y){
-		arc.graphics.g2d.Draw.rect(region, x, y);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y);
 	}
 
 	public static void rect(TextureRegion region, float x, float y, float w, float h){
-		arc.graphics.g2d.Draw.rect(region, x, y, w, h);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y, w, h);
 	}
 
 	public static void grect(String name, float x, float y){
-		arc.graphics.g2d.Draw.rect(region(name), x, y);
+		TextureRegion region = region(name);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y + region.height/2f, region.width, region.height);
 	}
 
 	public static void grect(String name, float x, float y, float w, float h){
-		arc.graphics.g2d.Draw.rect(region(name), x, y, w, h);
+		TextureRegion region = region(name);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x, y + h/2f, w, h);
 	}
 
 	public static void crect(String name, float x, float y){
-		arc.graphics.g2d.Draw.rect(region(name), x, y);
+		TextureRegion region = region(name);
+		if(region != null) arc.graphics.g2d.Draw.rect(region, x + region.width/2f, y + region.height/2f, region.width, region.height);
 	}
 
 	public static TextureRegion region(String name){

@@ -15,7 +15,9 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import io.anuke.koru.entities.Entities;
 import io.anuke.koru.entities.Entity;
+import io.anuke.koru.entities.ProjectileTypes;
 import io.anuke.koru.entities.types.*;
 import io.anuke.koru.input.InputType;
 import io.anuke.koru.items.Item;
@@ -180,12 +182,6 @@ public class Registrator{
 		}
 	}
 
-	/**
-	 * Format:
-	 * 1) entity ID
-	 * 2) pos.x
-	 * 3) pos.y
-	 */
 	static class EntitySerializer extends Serializer<Entity>{
 
 		@Override
@@ -194,14 +190,54 @@ public class Registrator{
 			float x = k.readObject(input, float.class);
 			float y = k.readObject(input, float.class);
 
+			Entity entity;
+
 			try{
-				Entity entity = c.newInstance();
-				entity.id = id;
-				entity.pos.set(x, y);
-				return entity;
+				entity = c.newInstance();
 			}catch(Exception e){
 				throw new RuntimeException("Failed to create entity of type " + c.getName(), e);
 			}
+
+			entity.id = id;
+			entity.pos.set(x, y);
+
+			if(Player.class.equals(c)){
+				Player player = (Player)entity;
+				player.name = k.readObject(input, String.class);
+				player.local = k.readObject(input, boolean.class);
+				player.direction = k.readObject(input, Direction.class);
+			}else if(BlockAnimation.class.equals(c)){
+				entity.matid = k.readObject(input, int.class);
+			}else if(ItemDrop.class.equals(c)){
+				((ItemDrop)entity).stack = k.readObject(input, ItemStack.class);
+			}else if(Particle.class.equals(c)){
+				Particle particle = (Particle)entity;
+				particle.colorstart = k.readObject(input, int.class);
+				particle.colorend = k.readObject(input, int.class);
+				particle.material = k.readObject(input, Material.class);
+				particle.particleName = k.readObject(input, String.class);
+				particle.gravity = k.readObject(input, float.class);
+				particle.velocity = k.readObject(input, float.class);
+			}else if(Projectile.class.equals(c)){
+				Projectile projectile = (Projectile)entity;
+				projectile.type = ProjectileTypes.get(k.readObject(input, int.class));
+				int sourceId = k.readObject(input, int.class);
+				projectile.source = sourceId == -1 || Entities.instance == null ? null : Entities.get(sourceId);
+				projectile.contactDamage = k.readObject(input, int.class);
+				projectile.customDamage = k.readObject(input, boolean.class);
+				projectile.velocity.set(k.readObject(input, float.class), k.readObject(input, float.class));
+			}else if(DamageIndicator.class.equals(c)){
+				entity.parent = k.readObject(input, int.class);
+				entity.text = k.readObject(input, String.class);
+				entity.textColor = k.readObject(input, Color.class);
+			}else if(Effect.class.equals(c)){
+				Effect effect = (Effect)entity;
+				effect.effectId = k.readObject(input, int.class);
+				effect.effectRotation = k.readObject(input, float.class);
+				effect.effectColor = k.readObject(input, Color.class);
+			}
+
+			return entity;
 		}
 
 		@Override
@@ -209,6 +245,42 @@ public class Registrator{
 			k.writeObject(output, entity.getID());
 			k.writeObject(output, entity.pos.x);
 			k.writeObject(output, entity.pos.y);
+
+			if(entity instanceof Player){
+				Player player = (Player)entity;
+				k.writeObject(output, player.name);
+				k.writeObject(output, player.local);
+				k.writeObject(output, player.direction);
+			}else if(entity instanceof BlockAnimation){
+				k.writeObject(output, entity.matid);
+			}else if(entity instanceof ItemDrop){
+				k.writeObject(output, ((ItemDrop)entity).stack);
+			}else if(entity instanceof Particle){
+				Particle particle = (Particle)entity;
+				k.writeObject(output, particle.colorstart);
+				k.writeObject(output, particle.colorend);
+				k.writeObject(output, particle.material);
+				k.writeObject(output, particle.particleName);
+				k.writeObject(output, particle.gravity);
+				k.writeObject(output, particle.velocity);
+			}else if(entity instanceof Projectile){
+				Projectile projectile = (Projectile)entity;
+				k.writeObject(output, ProjectileTypes.idOf(projectile.type));
+				k.writeObject(output, projectile.source == null ? -1 : projectile.source.getID());
+				k.writeObject(output, projectile.contactDamage);
+				k.writeObject(output, projectile.customDamage);
+				k.writeObject(output, projectile.velocity.x);
+				k.writeObject(output, projectile.velocity.y);
+			}else if(entity instanceof DamageIndicator){
+				k.writeObject(output, entity.parent);
+				k.writeObject(output, entity.text);
+				k.writeObject(output, entity.textColor);
+			}else if(entity instanceof Effect){
+				Effect effect = (Effect)entity;
+				k.writeObject(output, effect.effectId);
+				k.writeObject(output, effect.effectRotation);
+				k.writeObject(output, effect.effectColor);
+			}
 		}
 	}
 }

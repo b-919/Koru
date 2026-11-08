@@ -124,16 +124,18 @@ public class Entity{
 		Entities.remove(this);
 	}
 
-	/** Folds the old VelocityTrait, LifetimeTrait, SyncTrait and TileCollideTrait updates. */
+	/** Updates lifetime, velocity, interpolation and tile collision. */
 	public void update(){
+		float delta = Math.min(Time.delta, 3f);
+
 		if(hasLifetime){
-			life += Time.delta;
+			life += delta;
 			if(life > lifetime) remove();
 		}
 
 		if(hasVelocity){
-			pos.add(velocity.x * Time.delta, velocity.y * Time.delta);
-			velocity.scl(1f - drag * Time.delta);
+			pos.add(velocity.x * delta, velocity.y * delta);
+			velocity.scl(1f - drag * delta);
 		}
 
 		if(syncType != null && interpolator != null && !Net.server() && !local){
@@ -147,6 +149,11 @@ public class Entity{
 
 	/** Called when the entity's tile-collide box overlaps a solid tile. Overridden by projectiles. */
 	public void onTileCollision(int tileX, int tileY){
+
+	}
+
+	/** Shadow rendering hook, called before world objects and entity sprites are drawn. */
+	public void drawShadow(){
 
 	}
 

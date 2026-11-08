@@ -22,7 +22,6 @@ import io.anuke.koru.world.*;
 import io.anuke.koru.world.materials.Material;
 import arc.util.ColorCodes;
 
-//TODO do something about the chunk writers
 public class WorldFile extends WorldLoader{
 	public final String filename = "chunk", extension = ".kw";
 	private Path file;
@@ -36,7 +35,7 @@ public class WorldFile extends WorldLoader{
 	private boolean debug;
 
 	public WorldFile(Path file, Generator generator, StructureGenerator structGenerator) {
-		
+
 		if(!Files.isDirectory(file))
 			throw new RuntimeException("World file has to be a directory!");
 
@@ -78,7 +77,7 @@ public class WorldFile extends WorldLoader{
 
 	public void writeChunk(Chunk chunk, int writer){
 		Path path = Paths.get(file.toString(), "/" + fileName(chunk.x, chunk.y));
-		
+
 		while(!writers[writer].writing()){ // to prevent screwups with multiple threads using writer 0
 			writers[writer].writeChunk(chunk, path);
 			files.put(path.getFileName().toString(), path);
@@ -95,12 +94,12 @@ public class WorldFile extends WorldLoader{
 			long time = Time.millis();
 
 			try{
-				
+
 				Input input = null;
 				FileInputStream file = new FileInputStream(path.toFile());
 					input = new Input(file);
 				Chunk chunk = kryo.readObject(input, Chunk.class);
-				
+
 				for(int cx = 0; cx < World.chunksize; cx ++){
 					for(int cy = 0; cy < World.chunksize; cy ++){
 						chunk.tiles[cx][cy].x = cx + chunk.worldX();

@@ -1,7 +1,6 @@
 package io.anuke.koru.graphics;
 
 import arc.Core;
-import io.anuke.koru.graphics.Draw;
 
 import io.anuke.koru.entities.Entity;
 
@@ -11,22 +10,24 @@ public class Drawf{
 		return Core.atlas.has(name);
 	}
 
-	/** Draws the static shadow sprite used by the old facet shadow. */
+	/** Draws a shadow under the entity. */
 	public static void shadow(Entity entity, int size, float offset){
 		shadow(entity, size, offset, false);
 	}
 
 	/** Draws the static shadow sprite, optionally snapped to integer coordinates. */
 	public static void shadow(Entity entity, int size, float offset, boolean snap){
-		String region = "shadow" + (int) ((size * 0.8f / 2f) + Math.pow(size, 1.5) / 200.0) * 2;
+		String region = "shadow" + (int)(size * 0.8f / 2f + Math.pow(size, 1.5f) / 200f) * 2;
 
 		Draw.z(-999999);
-		Draw.color();
 
 		float x = snap ? (int) entity.pos.x : entity.pos.x;
 		float y = snap ? (int) entity.pos.y : entity.pos.y;
 
-		Draw.rect(region, x, y + offset);
+		arc.graphics.g2d.TextureRegion sprite = Draw.region(region);
+		if(sprite != null){
+			ShadowRenderer.add(sprite, x, y + offset, sprite.width, sprite.height, new arc.graphics.Color(0, 0, 0, 0.3f));
+		}
 	}
 }
 

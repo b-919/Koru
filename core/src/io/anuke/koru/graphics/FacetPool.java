@@ -2,8 +2,6 @@ package io.anuke.koru.graphics;
 
 import arc.util.pooling.Pools;
 
-import io.anuke.koru.graphics.Facet;
-
 public class FacetPool{
 
 	public static KoruFacet get(String region){

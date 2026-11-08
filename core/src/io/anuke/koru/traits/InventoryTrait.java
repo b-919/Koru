@@ -13,7 +13,6 @@ import io.anuke.koru.network.Net;
 import io.anuke.koru.network.packets.InventoryUpdatePacket;
 import io.anuke.koru.network.packets.SlotChangePacket;
 
-//TODO fix
 public class InventoryTrait{
 	private static final ObjectMap<Item, Integer> temp = new ObjectMap<Item, Integer>();
 	private static final ObjectSet<Item> tempset = new ObjectSet<Item>();
@@ -109,7 +108,7 @@ public class InventoryTrait{
 
 	/**
 	 * Adds the item to the inventory.
-	 * 
+	 *
 	 * @param item
 	 *            - itemstack you wish to remove
 	 * @return what remains of the stack after adding it. May be a stack with
@@ -199,7 +198,7 @@ public class InventoryTrait{
 
 	/**
 	 * Adds the whole itemstack Seq to this inventory, if possible.
-	 * 
+	 *
 	 * @return an objectmap of items removed, with the key being the type and
 	 *         the value being the amount removed.
 	 */

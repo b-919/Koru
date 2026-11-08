@@ -12,7 +12,6 @@ import io.anuke.koru.network.Net;
 import io.anuke.koru.utils.Resources;
 import io.anuke.koru.world.Tile;
 import io.anuke.koru.graphics.Effects;
-import io.anuke.koru.modules.KoruModuleCore;
 import arc.util.ColorCodes;
 import arc.util.Time;
 
@@ -23,29 +22,30 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 	public static World world;
 	public static Network network;
 	public static io.anuke.koru.ui.Skin skin;
-	
+
 	private static StringBuffer log = new StringBuffer();
 
 	@Override
 	public void init(){
-		//arc-backed chunks logic
-		arc.Core.camera = new arc.graphics.Camera();
-		arc.Core.batch = new arc.graphics.g2d.SpriteBatch();
+		Core.camera = new arc.graphics.Camera();
+		Core.batch = new arc.graphics.g2d.SpriteBatch();
 		LSystems.generate();
 		try{
-			
+
 			Resources.loadData();
-			
+
 			Entities.instance = new Entities();
-			
+
 			Effects.setEffectProvider((id, color, x, y, rotation)->{
-				throw new IllegalArgumentException("Effects cannot be created clientside!");
+				io.anuke.koru.entities.types.Effect effect = io.anuke.koru.entities.types.Effect.create(
+						id.id, color.cpy(), x, y, rotation);
+				effect.add();
 			});
-	
+
 			module(network = new Network());
 			module(control = new Control());
 			module(renderer = new Renderer());
-			
+
 			module(world = new World());
 			module(ui = new UI());
 
@@ -58,18 +58,16 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 				Tile tile = world.getTile(x, y);
 				tile.solidMaterial().getHitbox(x, y, out);
 			};
-			
+
 			resize(arc.Core.graphics.getWidth(), arc.Core.graphics.getHeight());
-			
+
 			for(KoruModule module : modulearray){
 				module.init();
 			}
-			
+
 		}catch (Exception e){
 			handleException(e);
 		}
-		
-		//engine.addSystem(new CollisionDebugSystem());
 	}
 
 	@Override
@@ -79,7 +77,7 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 
 	@Override
 	public void render(){
-		
+
 		Time.update();
 
 		try{
@@ -88,20 +86,14 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 		}catch(Exception e){
 			handleException(e);
 		}
-
-		if(Core.graphics.getFrameId() % 30 == 0){
-			System.out.println("[DEBUG frame=" + Core.graphics.getFrameId() + " size=" + Core.graphics.getWidth() + "x" + Core.graphics.getHeight() + "]");
-		}
 	}
-	
+
 	static void handleException(Exception e){
 		e.printStackTrace();
-		
-		//write log - useless for me, since I can just see the stack trace
+
 		if(!System.getProperty("user.name").equals("anuke")){
 			Core.files.local("korulog-" + Calendar.getInstance().getTime().toString().replace(":", "-") + ".log").writeString(e.toString() + "\n" + java.util.Arrays.toString(e.getStackTrace()), false);
 		}
-		//exit, nothing left to do here
 		Core.app.exit();
 	}
 
@@ -124,8 +116,8 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 			String message = "[" + name + "::" + e.getMethodName() + "]" + "" + o;
 			log.append(message + "\n");
 			int l = 500;
-			
-			
+
+
 			log = new StringBuffer(log.substring(Math.max(0, log.length()-l), log.length()));
 		}
 
@@ -133,7 +125,7 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 			((Exception) o).printStackTrace();
 		}
 	}
-		
+
 	public static CharSequence getLog(){
 		return log;
 	}

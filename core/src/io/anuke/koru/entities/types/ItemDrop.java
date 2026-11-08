@@ -8,6 +8,8 @@ import arc.util.Tmp;
 import io.anuke.koru.entities.Entities;
 import io.anuke.koru.entities.Entity;
 import io.anuke.koru.graphics.Drawf;
+import io.anuke.koru.graphics.Effects;
+import io.anuke.koru.graphics.Fx;
 import io.anuke.koru.items.ItemStack;
 import io.anuke.koru.network.Net;
 import io.anuke.koru.network.SyncType;
@@ -38,16 +40,21 @@ public class ItemDrop extends Entity{
 
 					if(dst > 2f){
 						velocity.add(Tmp.v1.set(other.pos().x - pos().x,
-								other.pos().y - (pos().y - height)).nor().scl(0.2f * Time.delta));
+								other.pos().y - (pos().y - height)).nor().scl(0.2f * Math.min(Time.delta, 3f)));
 					}
 
-					if(dst < 2f){
+					if(dst < 6f){
 						other.inventory.addItem(stack);
 						other.inventory.sendUpdate(other);
-						Entities.remove(this);
-						// TODO Effects.effect(Fx.itempickup, pos().x, pos().y - 0.5f); once Effects subsystem ported
+						Effects.effect(Fx.itempickup, pos().x, pos().y - 0.5f);
+						Net.removeEntity(this);
 					}
 				});
+	}
+
+	@Override
+	public void drawShadow(){
+		Drawf.shadow(this, 6, 0);
 	}
 
 	@Override
@@ -59,9 +66,7 @@ public class ItemDrop extends Entity{
 
 		Draw.z(pos().y);
 
-		Draw.rect(region, pos().x, pos().y - 2);
-
-		Drawf.shadow(this, 6, 0);
+		Draw.grect(region, pos().x, pos().y - 2);
 	}
 
 	public static void create(float x, float y, ItemStack[] stacks){

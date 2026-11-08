@@ -3,8 +3,6 @@ package io.anuke.koru.graphics;
 import arc.Core;
 import arc.graphics.Color;
 
-import arc.util.Time;
-// Use local Shader class
 import io.anuke.koru.graphics.Shader;
 
 public class Shaders{
@@ -14,9 +12,9 @@ public class Shaders{
 	public static final Mix mix = new Mix();
 	public static final Round round = new Round();
 	public static final Light light = new Light();
-	
+
 	public static class Water extends Shader{
-		
+
 		public Water(){
 			super("water", "default");
 		}
@@ -28,35 +26,35 @@ public class Shaders{
 			setUniformf("time", arc.util.Time.time);
 		}
 	}
-	
+
 	public static class Light extends Shader{
-		
+
 		public Light(){
 			super("light", "default");
 		}
 
 		@Override
 		public void apply(){
-			
+
 		}
 	}
-	
+
 	public static class Round extends Shader{
-		
+
 		public Round(){
 			super("round", "default");
 		}
 
 		@Override
 		public void apply(){
-			
+
 		}
 	}
-	
+
 	public static class Mix extends Shader{
 		public Color color = new Color();
 		public float amount = 0.5f;
-		
+
 		public Mix(){
 			super("mix", "default");
 		}
@@ -67,10 +65,10 @@ public class Shaders{
 			setUniformf("amount", amount);
 		}
 	}
-	
+
 	public static class Outline extends Shader{
 		public Color color = Color.white;
-		
+
 		public Outline(){
 			super("outline", "outline");
 		}
@@ -81,10 +79,10 @@ public class Shaders{
 			setUniformf("u_color", color.r, color.g, color.b, color.a);
 		}
 	}
-	
+
 	public static class Inline extends Shader{
 		public Color color = Color.white;
-		
+
 		public Inline(){
 			super("inline", "outline");
 		}

@@ -44,7 +44,6 @@ public class KoruServer implements NetProvider{
 	KoruUpdater updater;
 	CommandHandler commands;
 
-	//TODO thread safety? -- last connection used
 	private Connection connection;
 
 	private void setup(){
@@ -170,7 +169,6 @@ public class KoruServer implements NetProvider{
 			player.name = packet.name;
 
 			DataPacket data = new DataPacket();
-			data.playerid = player.getID();
 			data.time = Koru.world.time;
 
 			ArrayList<Entity> entities = new ArrayList<Entity>();
@@ -181,11 +179,11 @@ public class KoruServer implements NetProvider{
 
 			data.entities = entities;
 
-			sendTo(connection.getID(), data, Mode.TCP);
-
-			sendExcept(connection.getID(), player, Mode.TCP);
-
 			player.add();
+			data.playerid = player.getID();
+
+			sendTo(connection.getID(), data, Mode.TCP);
+			sendExcept(connection.getID(), player, Mode.TCP);
 
 			InventoryTrait inv = player.inventory;
 

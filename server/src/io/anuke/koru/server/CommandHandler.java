@@ -25,7 +25,7 @@ public class CommandHandler{
 		scan = new Scanner(System.in);
 
 		new Thread(()->{
-			while(true){
+			while(scan.hasNextLine()){
 				try{
 					process(scan.nextLine().toLowerCase());
 				}catch (Exception e){

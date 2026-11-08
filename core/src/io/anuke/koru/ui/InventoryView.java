@@ -36,7 +36,6 @@ public class InventoryView extends Table{
 
 		int width = 4;
 
-		//TODO fix
 		for(int i = 0; i < stacks.length; i++){
 			if(i % width == 0)
 				row();
@@ -65,10 +64,10 @@ public class InventoryView extends Table{
 		super.draw();
 
 		if(inventory.selected != null){
-			drawItem(batch, alpha, Core.input.mouseX() - slotsize / 2, Core.graphics.getHeight() - Core.input.mouseY() - slotsize / 2, inventory.selected);
+			drawItem(batch, alpha, Core.input.mouseX() - slotsize / 2, Core.input.mouseY() - slotsize / 2, inventory.selected);
 		}
 
-		Element actor = getScene().hit(Core.input.mouseX(), Core.graphics.getHeight() - Core.input.mouseY(), true);
+		Element actor = getScene().hit(Core.input.mouseX(), Core.input.mouseY(), true);
 
 		if(actor instanceof Slot){
 			Slot slot = (Slot) actor;
@@ -76,7 +75,7 @@ public class InventoryView extends Table{
 			if(stacks[slot.index] != null){
 				Resources.font3().getData().setScale(2f);
 				Resources.font3().setColor(Color.yellow);
-				Resources.font3().draw(stacks[slot.index].item.formalName(), Core.input.mouseX(), Core.graphics.getHeight() - Core.input.mouseY() + 17, 0, Align.bottomRight, false);
+				Resources.font3().draw(stacks[slot.index].item.formalName(), Core.input.mouseX(), Core.input.mouseY() + 17, 0, Align.bottomRight, false);
 				Resources.font3().setColor(Color.white);
 			}
 		}
@@ -98,11 +97,8 @@ public class InventoryView extends Table{
 			Resources.font2().setColor(0, 0, 0, 0.18f * alpha);
 			Resources.font2().draw(stack.amount + "", x + 8 + 2, y + 54 - 3);
 
-			//fixes wierd crash bug?
-			if(stack != null){
-				Resources.font2().setColor(1, 1, 1, alpha);
-				Resources.font2().draw(stack.amount + "", x + 8, y + 54);
-			}
+			Resources.font2().setColor(1, 1, 1, alpha);
+			Resources.font2().draw(stack.amount + "", x + 8, y + 54);
 		}
 	}
 
@@ -122,7 +118,7 @@ public class InventoryView extends Table{
 			Batch batch = Core.batch;
 			io.anuke.koru.graphics.Draw.alpha(alpha);
 			Skin.instance.get((index == inventory.hotbar) ? "slotselect" : "slot", Drawable.class).draw(x, y, width, height);
-			
+
 			if(stacks[index] != null){
 				drawItem(batch, alpha, x, y, stacks[index]);
 			}

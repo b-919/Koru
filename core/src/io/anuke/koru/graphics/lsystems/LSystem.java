@@ -36,7 +36,7 @@ public abstract class LSystem{
 		stack.clear();
 		x = y = lastx = lasty = 0;
 		angle = 90;
-		
+
 		for(char c : string.toCharArray()){
 			drawc(c);
 		}
@@ -55,20 +55,21 @@ public abstract class LSystem{
 			push();
 		}else if(c == ']'){
 			pop();
-		}else if(c == 'X'){
-			//noop
 		}
 	}
 
 	protected void drawForward(){
-		float nx = lastx + Mathf.cosDeg(angle + sway()) * data.len;
-		float ny = lasty + Mathf.sinDeg(angle + sway()) * data.len;
+		float sway = data.swayscl * Mathf.sin((timeOffset + getTime()) / data.swayphase + stack.size() * data.swayspace);
+		float radians = Mathf.degRad * (-angle + 180f + sway);
+
+		float nx = data.len * Mathf.cos(radians);
+		float ny = data.len * Mathf.sin(radians);
 		LTree.Line line = new LTree.Line();
-		line.x1 = lastx; line.y1 = lasty; line.x2 = nx; line.y2 = ny;
+		line.x1 = lastx; line.y1 = lasty; line.x2 = lastx + nx; line.y2 = lasty + ny;
 		line.stack = stack.size();
 		lines.add(line);
-		lastx = nx;
-		lasty = ny;
+		lastx += nx;
+		lasty += ny;
 	}
 
 	protected void push(){
@@ -83,10 +84,6 @@ public abstract class LSystem{
 	}
 
 	protected abstract float getTime();
-	
-	protected float sway(){
-		return Mathf.sin(getTime() + lasty * data.swayspace + lastx * data.swayspace) * data.swayscl;
-	}
 
 	protected abstract void drawLines();
 

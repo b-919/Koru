@@ -37,28 +37,29 @@ public class World extends KoruModule{
 	public static final int tilesize = 12;
 
 	private static final Timekeeper chunkTimer = Timekeeper.ofTicks(80);
-	
+
 	private static Color ambientColor = new Color();
 	private static final float[] colors = new float[]{1, 1, 0.9f, 0.5f, 0.2f, 0, 0, 0.5f, 0.9f, 1};
-	public final static float timescale = 40000f*0; //temporarily disabled for testing - remove 0 to enable
-	
+	//zero disables the day/night cycle.
+	public final static float timescale = 40000f*0;
+
 	private boolean updated;
 	private Point2 point = new Point2();
 	private WorldLoader file;
 	private boolean[][] chunkloaded;
-	
+
 	public int lastchunkx, lastchunky;
 	public Chunk[][] chunks; //client-side tiles
 	public Chunk[][] tempchunks; //temporary operation chunks
 	public float time = 0f; //world time
-	
+
 	public World(WorldLoader loader){
 		this();
 		file = loader;
 	}
 
 	public World(){
-		
+
 		if( !Net.server()){
 			chunkloaded = new boolean[loadrange * 2][loadrange * 2];
 			chunks = new Chunk[loadrange * 2][loadrange * 2];
@@ -69,51 +70,46 @@ public class World extends KoruModule{
 	private boolean inBounds(int x, int y, Object[][] array){
 		return x >= 0 && y >= 0 && x < array.length && y < array[0].length;
 	}
-	
+
 	public void init(){
-		
+
 	}
-	
-	//TODO move time and color related function to a different class?
+
 	public Color getAmbientColor(){
 		int index = (int)(time*colors.length);
 		float mod = time*colors.length-index;
 		float current = colors[index];
 		float next = colors[(index == colors.length-1 ?  0 : index+1)];
-		
+
 		float t = current*(1f-mod) + next*mod;
-		
+
 		return ambientColor.set(Color.white).lerp(Color.black, 1f-t);
 	}
 
 	@Override
 	public void update(){
 		if(Net.server() && chunkTimer.poll()) checkUnloadChunks();
-	
+
 		time += Time.delta/timescale;
 		if(time >= 1f) time = 0f;
-		
+
 		updated = false;
-		
+
 		if(Net.server()) return;
 
 		int newx = toChunkCoords(Core.camera.position.x);
 		int newy = toChunkCoords(Core.camera.position.y);
 
-		//camera moved, update chunks
 		if(newx != lastchunkx || newy != lastchunky){
-			
+
 			int sx = newx - lastchunkx, sy = newy - lastchunky;
-			
+
 			for(int x = 0;x < loadrange * 2;x ++){
 				for(int y = 0;y < loadrange * 2;y ++){
 					tempchunks[x][y] = chunks[x][y];
-				//	if(chunks[x][y] == null) continue;
-					//Pools.free(chunks[x][y]);
-					//chunks[x][y] = null;
 				}
 			}
-			
+
 			for(int x = 0;x < loadrange * 2;x ++){
 				for(int y = 0;y < loadrange * 2;y ++){
 					if(!inBounds(x + sx, y + sy, chunks)){
@@ -130,7 +126,7 @@ public class World extends KoruModule{
 
 		sendChunkRequest();
 	}
-	
+
 	void checkUnloadChunks(){
 		Collection<Chunk> chunks = file.getLoadedChunks();
 
@@ -155,22 +151,20 @@ public class World extends KoruModule{
 
 	public void loadChunks(ChunkPacket packet){
 
-		//the relative position of the packet's chunk, to be put in the client's chunk Seq
 		int relativex = packet.chunk.x - lastchunkx + loadrange;
 		int relativey = packet.chunk.y - lastchunky + loadrange;
-		
-		//if the chunk coords are out of range, stop
+
 		if(relativex < 0 || relativey < 0 || relativex >= loadrange * 2 || relativey >= loadrange * 2){
 			return;
 		}
-		
+
 		for(int x = 0; x < chunksize; x ++){
 			for(int y = 0; y < chunksize; y ++){
 				packet.chunk.tiles[x][y].x = x + packet.chunk.worldX();
 				packet.chunk.tiles[x][y].y = y + packet.chunk.worldY();
 			}
 		}
-		
+
 		chunks[relativex][relativey] = packet.chunk;
 	}
 
@@ -197,7 +191,7 @@ public class World extends KoruModule{
 		Tile tile = getWorldTile(x, y);
 		Material block = tile.wall();
 		Material tilem = tile.topFloor();
-		return (block.solid()) && block.getHitbox(tile(x), tile(y), Rect.tmp).contains(x, y) 
+		return (block.solid()) && block.getHitbox(tile(x), tile(y), Rect.tmp).contains(x, y)
 			|| (tilem.solid() && tilem.getHitbox(tile(x), tile(y), Rect.tmp).contains(x, y));
 	}
 
@@ -244,19 +238,19 @@ public class World extends KoruModule{
 
 	public boolean inClientBounds(int x, int y){
 		if(Net.server()) return true;
-		
+
 		int tx = tile(Core.camera.position.x);
 		int ty = tile(Core.camera.position.y);
 		if(Math.abs(tx - x) >= loadrange * chunksize - 1 || Math.abs(ty - y) >= loadrange * chunksize - 1) return false;
 		int ax = x / chunksize - tx / chunksize + loadrange;
 		int ay = y / chunksize - ty / chunksize + loadrange;
-		if( !inBounds(ax, ay, chunks)){ 
+		if( !inBounds(ax, ay, chunks)){
 			return false;
 		}
 		if(getRelativeChunk(x, y) == null) return false;
 		return true;
 	}
-	
+
 	/**Clientside only.*/
 	public Chunk getRelativeChunk(int x, int y){
 		if(x < -1) x ++;
@@ -292,11 +286,11 @@ public class World extends KoruModule{
 		if(y < 0) cy --;
 		return file.getChunk(cx, cy).getWorldTile(x, y);
 	}
-	
+
 	public Tile getTile(Point2 point){
 		return getTile(point.x, point.y);
 	}
-	
+
 	public Tile getTile(long c){
 		int x = (int)(c >> 32);
 		int y = (int)c;
@@ -308,7 +302,7 @@ public class World extends KoruModule{
 		int y = tile(fy);
 		return getTile(x, y);
 	}
-	
+
 	public void setTile(int x, int y, Tile tile){
 		if( !Net.server()){
 			getRelativeChunk(x, y).setWorldTile(x, y, tile);
@@ -317,7 +311,7 @@ public class World extends KoruModule{
 		int cx = x / chunksize, cy = y / chunksize;
 		file.getChunk(cx, cy).setWorldTile(x, y, tile);
 	}
-	
+
 	/**Returns a chunk based on tile coords.*/
 	public Chunk getChunkFor(int x, int y){
 		int cx = x / chunksize, cy = y / chunksize;
@@ -340,35 +334,34 @@ public class World extends KoruModule{
 	public static int tile(float i){
 		return nint(i/tilesize + 0.5f);
 	}
-	
+
 	public static float world(int i){
 		return tilesize * i;
 	}
-	
+
 	static int nint(float b){
 		return b < 0 ? (int)(b-1) : (int)b;
 	}
-	
+
 	static long getLong(int x, int y){
 		return (long)x << 32 | y & 0xFFFFFFFFL;
 	}
-	
+
 	static int getX(long l){
 		return(int)(l >> 32);
 	}
-	
+
 	static int getY(long l){
 		return (int)l;
 	}
-	
-	//TODO make this work with transparency instead of specific types
+
 	public static boolean isPlaceable(Material material, Tile tile){
-		
+
 		if(!material.isLayer(MaterialLayer.floor)){
 			return tile.isWallEmpty();
 		}else{
 			return tile.topFloor() != material && !tile.wall().solid() && tile.canAddTile();
-		}		
+		}
 	}
 }
 

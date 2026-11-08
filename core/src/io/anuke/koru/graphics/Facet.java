@@ -37,9 +37,7 @@ public abstract class Facet implements Poolable, Comparable<Facet>, Position{
 
 	@Override
 	public int compareTo(Facet other){
-		if(provider != other.provider)
-			return Integer.compare(provider.ordinal(), other.provider.ordinal());
-		return Float.compare(layer, other.layer);
+		return provider.compare(this, other);
 	}
 
 	@Override

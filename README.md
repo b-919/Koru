@@ -2,43 +2,57 @@
 
 # Koru
 
-A 2D sandbox game, written using libGDX and Java 8. Partially made as a testing ground for Entity Component systems, AI, world generation, biome generation and shaders.
+A 2D sandbox game, originally created by [Anuken](https://github.com/Anuken/Koru) with libGDX and uCore.
+This repository is a port of the game to [Arc](https://github.com/Anuken/Arc), the framework used by
+[Mindustry](https://github.com/Anuken/Mindustry).
 
-**This project is no longer being worked on. I have moved on to other things.**  
-No issues with the game will be fixed.
+The gameplay code, assets and world generators are preserved. Rendering, input, UI, networking and
+the old uCore libraries have been migrated to Arc 160.4 and Java 17.
 
 ![axe-wielding crabs](http://i.imgur.com/6bft2gp.png)
 
 ![reflections](https://i.imgur.com/cMqFB6c.gif)
 
-### Current Features
-- infinite procedurally generated world
-- biomes and cave systems
-- basic building, resource collection
-- reflective water shaders
-- GUI made with [uCore Scene](https://github.com/Anuken/uCore)
-- multiplayer, made with Kryonet
-- crabs
-- lighting system, using a modified version of box2D lights
-- ingame chat
+## Features
 
-### Building
+- Infinite procedurally generated world
+- Biomes, caves and structure generation
+- Basic building and resource collection
+- Reflective water and custom shaders
+- Arc scene UI
+- Multiplayer using ArcNet and Kryo serialization
+- Crabs
+- World lighting data
+- In-game chat
 
-1. Install **JDK 8** - **not any other version!** If you fail to use the right version, the build may fail.
-2. Open a terminal/command prompt, and run `./gradlew server:run` (linux/mac) / `gradlew.bat server:run` (windows)
-3. Open another terminal/cmd tab and run `./gradlew desktop:run` (linux/mac) / `gradlew.bat desktop:run` (windows)
-4. Press "connect" in the game window.
-5. ~~Experience a broken game that will never be fixed.~~
+## Requirements
 
-#### Troubleshooting?
+- JDK 17
+- The Gradle wrapper included in this repository
 
-I haven't touched this project in at least 2 years, so if you run into problems, you're on your own.
+## Building and running
 
-~~### Roadmap~~
-- proper player characters
-- crafting
-- more blocks
-- passive creatures
-- enemies
-- saving entities in chunks
-- block entities and data
+Windows:
+
+```bat
+gradlew.bat :desktop:run
+```
+
+Linux / macOS:
+
+```bash
+./gradlew :desktop:run
+```
+
+Start a server, then start a client and press **Connect**:
+
+```bat
+gradlew.bat :server:run
+gradlew.bat :desktop:run
+```
+
+Compile everything without launching:
+
+```bat
+gradlew.bat :core:compileJava :server:compileJava :desktop:compileJava
+```

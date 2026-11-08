@@ -19,12 +19,15 @@ public class TestEntity extends Entity{
 	}
 
 	@Override
+	public void drawShadow(){
+		Drawf.shadow(this, 8, 0);
+	}
+
+	@Override
 	public void draw(){
 		Draw.z(pos().y);
 
-		Draw.rect("player", pos().x, pos().y);
-
-		Drawf.shadow(this, 8, 0);
+		Draw.grect("player", pos().x, pos().y);
 	}
 }
 
