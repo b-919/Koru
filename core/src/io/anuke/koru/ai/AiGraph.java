@@ -1,9 +1,9 @@
 package io.anuke.koru.ai;
 
-import arc.struct.Seq;
+import arc.struct.*;
 
 public interface AiGraph<N>{
-	Seq<AiConnection<N>> getConnections(N fromNode);
+    Seq<AiConnection<N>> getConnections(N fromNode);
 }
 
 

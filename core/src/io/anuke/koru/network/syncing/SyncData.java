@@ -1,29 +1,29 @@
 package io.anuke.koru.network.syncing;
 
-import io.anuke.koru.entities.Entity;
+import io.anuke.koru.entities.*;
 
 public class SyncData{
-	public long id;
-	public Object[] objects;
+    public long id;
+    public Object[] objects;
 
-	public SyncData(Entity entity, Object... objects){
-		this.id = entity.getID();
-		this.objects = objects;
-	}
+    public SyncData(Entity entity, Object... objects){
+        this.id = entity.getID();
+        this.objects = objects;
+    }
 
-	private SyncData(){}
+    private SyncData(){}
 
-	public <T> T get(int index){
-		return (T)objects[index];
-	}
+    public <T> T get(int index){
+        return (T)objects[index];
+    }
 
-	public float x(){
-		return get(0);
-	}
+    public float x(){
+        return get(0);
+    }
 
-	public float y(){
-		return get(1);
-	}
+    public float y(){
+        return get(1);
+    }
 }
 
 

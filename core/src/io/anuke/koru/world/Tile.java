@@ -1,168 +1,164 @@
 package io.anuke.koru.world;
 
-import java.util.Arrays;
-
-import arc.util.pooling.Pool.Poolable;
-
-import io.anuke.koru.modules.World;
-import io.anuke.koru.network.Net;
-import io.anuke.koru.world.materials.Material;
-import io.anuke.koru.world.materials.MaterialLayer;
-import io.anuke.koru.world.materials.Materials;
-import io.anuke.koru.utils.Bits;
-import arc.math.Mathf;
+import arc.math.*;
+import arc.util.pooling.Pool.*;
+import io.anuke.koru.modules.*;
+import io.anuke.koru.network.*;
+import io.anuke.koru.utils.*;
+import io.anuke.koru.world.materials.*;
+import java.util.*;
 
 public class Tile implements Poolable{
-	public static final int LAYER_SIZE = 10;
-	
-	/**block light level; used for caves*/
-	public byte light = (byte)127;
-	/**top floor id*/
-	public byte top = 0;
-	/**floor ID Seq*/
-	public short[] floors;
-	/**wall block ID*/
-	public short wallid;
-	/**Tile data. Currently not saved or transferred.*/
-	public transient TileData data;
-	/**Position data. Transient, so it doesn't get sent over the network or serialized.
-	 * MAKE SURE TO INITIALIZE AFTER DESERALIZATION! */
-	public transient int x, y;
-	
-	/**Used for deserialization.*/
-	public static Tile unloadedTile(){
-		return new Tile();
-	}
-	
-	private Tile(){}
-	
-	public Tile(Material floor, Material block){
-		floors = new short[LAYER_SIZE];
-		floors[top] = (short)floor.id();
-		wallid = (short)block.id();
-	}
-	
-	public float worldx(){
-		return x * World.tilesize;
-	}
-	
-	public float worldy(){
-		return y * World.tilesize;
-	}
-	
-	public float light(){
-		return light/127f;
-	}
-	
-	public void setLight(float f){
-		light = (byte)(f*127);
-	}
-	
-	public short tileid(){
-		return floors[top];
-	}
-	
-	public Material topFloor(){
-		return !Net.server() ? Material.getMaterial(floors[0]) : Material.getMaterial(floors[top]);
-	}
-	
-	public Material wall(){
-		return Material.getMaterial(wallid);
-	}
-	
-	public boolean isWallEmpty(){
-		return wallid == 0;
-	}
+    public static final int layerSize = 10;
 
-	public void setWall(Material m){
-		wallid = (short)m.id();
-	}
-	
-	public void addFloor(Material m){
-		if(!canAddTile()) throw new RuntimeException("Too many tiles added!");
-		
-		floors[++top] = (short)m.id();
-	}
-	
-	public void removeTile(){
-		if(!canRemoveTile()) throw new RuntimeException("Too many tiles removed!");
-		
-		floors[top--] = 0;
-	}
-	
-	public boolean canAddTile(){
-		return top+1 < LAYER_SIZE;
-	}
-	
-	public boolean canRemoveTile(){
-		return top > 0;
-	}
-	
-	/**Sets either the top block or tile. Used mostly for generation.*/
-	public void setMaterial(Material m){
-		if(m == Materials.air){
-			wallid = (short)Materials.air.id();
-		}else if(m.layer() == MaterialLayer.floor){
-			floors[top] = (short)m.id();
-		}else{
-			wallid = (short)m.id();
-		}
-	}
-	
-	/**Adds a material on top instead of setting it.*/
-	public void addMaterial(Material m){
-		if(m == Materials.air){
-			wallid = (short)Materials.air.id();
-		}else if(m.layer() == MaterialLayer.floor){
-			addFloor(m);
-		}else{
-			wallid = (short)m.id();
-		}
-	}
+    /** block light level; used for caves */
+    public byte light = (byte)127;
+    /** top floor id */
+    public byte top = 0;
+    /** floor ID Seq */
+    public short[] floors;
+    /** wall block ID */
+    public short wallid;
+    /** Tile data. Currently not saved or transferred. */
+    public transient TileData data;
+    /**Position data. Transient, so it doesn't get sent over the network or serialized.
+     * MAKE SURE TO INITIALIZE AFTER DESERALIZATION! */
+    public transient int x, y;
 
-	public boolean solid(){
-		return topFloor().solid() || wall().solid();
-	}
+    /** Used for deserialization. */
+    public static Tile unloadedTile(){
+        return new Tile();
+    }
 
-	public Material solidMaterial(){
-		if(wall().solid()) return wall();
-		if(topFloor().solid()) return topFloor();
-		return null;
-	}
-	
-	/**Random number, generated based on coordinates.*/
-	public int rand(int max){
-		return rand(0, max);
-	}
-	
-	/**Random number, generated based on coordinates.*/
-	public int rand(int offset, int max){
-	    return Mathf.randomSeed(getSeed() + offset, 1, max);
-	}
-	
-	/**Random float 0-1, generated based on coordinates.*/
-	public float randFloat(int offset){
-	    return Mathf.randomSeed(getSeed() + offset);
-	}
+    private Tile(){}
 
-	public void changeEvent(){
-		topFloor().changeEvent(this);
-		wall().changeEvent(this);
-	}
-	
-	public long getSeed(){
-		return io.anuke.koru.utils.Bits.packInt(x, y);
-	}
+    public Tile(Material floor, Material block){
+        floors = new short[layerSize];
+        floors[top] = (short)floor.id();
+        wallid = (short)block.id();
+    }
 
-	@Override
-	public String toString(){
-		return "Tile: [" + x + ", " + y + ", block=" + wall() + " tile=" + topFloor() + " {"+  light +"}]";
-	}
+    public float worldx(){
+        return x * World.tilesize;
+    }
 
-	@Override
-	public void reset(){
-		Arrays.fill(floors, (short)0);
-	}
+    public float worldy(){
+        return y * World.tilesize;
+    }
+
+    public float light(){
+        return light/127f;
+    }
+
+    public void setLight(float f){
+        light = (byte)(f*127);
+    }
+
+    public short tileid(){
+        return floors[top];
+    }
+
+    public Material topFloor(){
+        return !Net.server() ? Material.getMaterial(floors[0]) : Material.getMaterial(floors[top]);
+    }
+
+    public Material wall(){
+        return Material.getMaterial(wallid);
+    }
+
+    public boolean isWallEmpty(){
+        return wallid == 0;
+    }
+
+    public void setWall(Material m){
+        wallid = (short)m.id();
+    }
+
+    public void addFloor(Material m){
+        if(!canAddTile()) throw new RuntimeException("Too many tiles added!");
+
+        floors[++top] = (short)m.id();
+    }
+
+    public void removeTile(){
+        if(!canRemoveTile()) throw new RuntimeException("Too many tiles removed!");
+
+        floors[top--] = 0;
+    }
+
+    public boolean canAddTile(){
+        return top+1 < layerSize;
+    }
+
+    public boolean canRemoveTile(){
+        return top > 0;
+    }
+
+    /** Sets either the top block or tile. Used mostly for generation. */
+    public void setMaterial(Material m){
+        if(m == Materials.air){
+            wallid = (short)Materials.air.id();
+        }else if(m.layer() == MaterialLayer.floor){
+            floors[top] = (short)m.id();
+        }else{
+            wallid = (short)m.id();
+        }
+    }
+
+    /** Adds a material on top instead of setting it. */
+    public void addMaterial(Material m){
+        if(m == Materials.air){
+            wallid = (short)Materials.air.id();
+        }else if(m.layer() == MaterialLayer.floor){
+            addFloor(m);
+        }else{
+            wallid = (short)m.id();
+        }
+    }
+
+    public boolean solid(){
+        return topFloor().solid() || wall().solid();
+    }
+
+    public Material solidMaterial(){
+        if(wall().solid()) return wall();
+        if(topFloor().solid()) return topFloor();
+        return null;
+    }
+
+    /** Random number, generated based on coordinates. */
+    public int rand(int max){
+        return rand(0, max);
+    }
+
+    /** Random number, generated based on coordinates. */
+    public int rand(int offset, int max){
+        return Mathf.randomSeed(getSeed() + offset, 1, max);
+    }
+
+    /** Random float 0-1, generated based on coordinates. */
+    public float randFloat(int offset){
+        return Mathf.randomSeed(getSeed() + offset);
+    }
+
+    public void changeEvent(){
+        topFloor().changeEvent(this);
+        wall().changeEvent(this);
+    }
+
+    public long getSeed(){
+        return io.anuke.koru.utils.Bits.packInt(x, y);
+    }
+
+    @Override
+    public String toString(){
+        return "Tile: [" + x + ", " + y + ", block=" + wall() + " tile=" + topFloor() + " {"+  light +"}]";
+    }
+
+    @Override
+    public void reset(){
+        Arrays.fill(floors, (short)0);
+    }
 }
 
 

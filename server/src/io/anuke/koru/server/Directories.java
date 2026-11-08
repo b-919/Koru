@@ -1,7 +1,7 @@
 package io.anuke.koru.server;
 
-import arc.files.Fi;
+import arc.files.*;
 
 public class Directories{
-	public static final Fi materials = new Fi("materials.json");
+    public static final Fi materials = new Fi("materials.json");
 }

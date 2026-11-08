@@ -1,9 +1,9 @@
 package io.anuke.koru.network.packets;
 
-import io.anuke.koru.items.ItemStack;
+import io.anuke.koru.items.*;
 
 public class SlotChangePacket{
-	public int slot;
-	public int id;
-	public ItemStack stack;
+    public int slot;
+    public int id;
+    public ItemStack stack;
 }

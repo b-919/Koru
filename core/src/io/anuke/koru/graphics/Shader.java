@@ -1,8 +1,8 @@
 package io.anuke.koru.graphics;
 
-import arc.Core;
-import arc.files.Fi;
-import arc.graphics.g2d.TextureRegion;
+import arc.*;
+import arc.files.*;
+import arc.graphics.g2d.*;
 
 public abstract class Shader extends arc.graphics.gl.Shader {
     public TextureRegion region;

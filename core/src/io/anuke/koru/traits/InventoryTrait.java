@@ -1,347 +1,354 @@
 package io.anuke.koru.traits;
 
-import java.util.function.Consumer;
-
-import arc.struct.Seq;
-import arc.struct.ObjectMap;
-import arc.struct.ObjectSet;
-
-import io.anuke.koru.entities.Entity;
-import io.anuke.koru.items.Item;
-import io.anuke.koru.items.ItemStack;
-import io.anuke.koru.network.Net;
-import io.anuke.koru.network.packets.InventoryUpdatePacket;
-import io.anuke.koru.network.packets.SlotChangePacket;
+import arc.func.*;
+import arc.struct.*;
+import io.anuke.koru.entities.*;
+import io.anuke.koru.items.*;
+import io.anuke.koru.network.*;
+import io.anuke.koru.network.packets.*;
 
 public class InventoryTrait{
-	private static final ObjectMap<Item, Integer> temp = new ObjectMap<Item, Integer>();
-	private static final ObjectSet<Item> tempset = new ObjectSet<Item>();
-	private static final Seq<ItemStack> tempArray = new Seq<ItemStack>();
+    private static final ObjectMap<Item, Integer> temp = new ObjectMap<Item, Integer>();
+    private static final ObjectSet<Item> tempset = new ObjectSet<Item>();
+    private static final Seq<ItemStack> tempArray = new Seq<ItemStack>();
 
-	public ItemStack[] inventory;
-	public ItemStack selected;
-	public transient int hotbar;
-	public int recipe = -1;
+    public ItemStack[] inventory;
+    public ItemStack selected;
+    public transient int hotbar;
+    public int recipe = -1;
 
-	public InventoryTrait(int size) {
-		inventory = new ItemStack[size];
-	}
+    public InventoryTrait(int size) {
+        inventory = new ItemStack[size];
+    }
 
-	private InventoryTrait() {
-	}
+    private InventoryTrait() {
+    }
 
-	public void clickSlot(int i){
-		ItemStack stack = inventory[i];
-		if(selected == null){
-			if(stack != null){
-				inventory[i] = null;
-				selected = stack;
-			}
-		}else{
-			if(stack != null){
-				if(stack.item != selected.item){
-					inventory[i] = selected;
-					selected = stack;
-				}else{
-					int max = inventory[i].item.getMaxStackSize();
-					int addable = max - inventory[i].amount;
-					int added = Math.min(addable, selected.amount);
+    public void clickSlot(int i){
+        ItemStack stack = inventory[i];
+        if(selected == null){
+            if(stack != null){
+                inventory[i] = null;
+                selected = stack;
+            }
+        }else{
+            if(stack != null){
+                if(stack.item != selected.item){
+                    inventory[i] = selected;
+                    selected = stack;
+                }else{
+                    int max = inventory[i].item.getMaxStackSize();
+                    int addable = max - inventory[i].amount;
+                    int added = Math.min(addable, selected.amount);
 
-					inventory[i].amount += added;
+                    inventory[i].amount += added;
 
-					selected.amount -= added;
+                    selected.amount -= added;
 
-					if(selected.amount == 0)
-						selected = null;
-				}
-			}else{
-				inventory[i] = selected;
-				selected = null;
-			}
-		}
-	}
+                    if(selected.amount == 0){
+                        selected = null;
+                    }
+                }
+            }else{
+                inventory[i] = selected;
+                selected = null;
+            }
+        }
+    }
 
-	public ItemStack hotbarStack(){
-		return inventory[hotbar];
-	}
+    public ItemStack hotbarStack(){
+        return inventory[hotbar];
+    }
 
-	/** Server-side only. */
-	public void sendUpdate(Entity entity){
-		InventoryUpdatePacket update = new InventoryUpdatePacket();
-		update.selected = selected;
-		update.stacks = inventory;
-		Net.sendTo(entity.connectionID, update);
-	}
+    /** Server-side only. */
+    public void sendUpdate(Entity entity){
+        InventoryUpdatePacket update = new InventoryUpdatePacket();
+        update.selected = selected;
+        update.stacks = inventory;
+        Net.sendTo(entity.connectionID, update);
+    }
 
-	/** Server-side only. */
-	public void sendHotbarUpdate(Entity entity){
-		SlotChangePacket update = new SlotChangePacket();
-		update.stack = hotbarStack();
-		Net.sendExcept(entity.connectionID, update);
-	}
+    /** Server-side only. */
+    public void sendHotbarUpdate(Entity entity){
+        SlotChangePacket update = new SlotChangePacket();
+        update.stack = hotbarStack();
+        Net.sendExcept(entity.connectionID, update);
+    }
 
-	/** Server-side only. */
-	public void sendHotbarUpdate(Entity entity, int to){
-		SlotChangePacket update = new SlotChangePacket();
-		update.stack = hotbarStack();
-		Net.sendTo(to, update);
-	}
+    /** Server-side only. */
+    public void sendHotbarUpdate(Entity entity, int to){
+        SlotChangePacket update = new SlotChangePacket();
+        update.stack = hotbarStack();
+        Net.sendTo(to, update);
+    }
 
-	public void set(ItemStack[] stacks, ItemStack selected){
-		this.selected = selected;
+    public void set(ItemStack[] stacks, ItemStack selected){
+        this.selected = selected;
 
-		for(int i = 0; i < inventory.length; i++){
-			inventory[i] = stacks[i];
-		}
+        for(int i = 0; i < inventory.length; i++){
+            inventory[i] = stacks[i];
+        }
 
-	}
+    }
 
-	public void addItems(Iterable<ItemStack> items){
-		for(ItemStack item : items)
-			addItem(item);
-	}
+    public void addItems(Iterable<ItemStack> items){
+        for(ItemStack item : items){
+            addItem(item);
+        }
+    }
 
-	public void addItems(ItemStack[] items){
-		for(ItemStack item : items)
-			addItem(item);
-	}
+    public void addItems(ItemStack[] items){
+        for(ItemStack item : items){
+            addItem(item);
+        }
+    }
 
-	/**
-	 * Adds the item to the inventory.
-	 *
-	 * @param item
-	 *            - itemstack you wish to remove
-	 * @return what remains of the stack after adding it. May be a stack with
-	 *         quantity 0.
-	 */
-	public ItemStack addItem(ItemStack item){
-		if(item.amount == 0)
-			return item;
+    /**
+     * Adds the item to the inventory.
+     *
+     * @param item
+     *            - itemstack you wish to remove
+     * @return what remains of the stack after adding it. May be a stack with
+     *         quantity 0.
+     */
+    public ItemStack addItem(ItemStack item){
+        if(item.amount == 0){
+            return item;
 
-		ItemStack stack = new ItemStack(item);
+        }
+        ItemStack stack = new ItemStack(item);
 
-		//attempt to stack on top first
-		for(int i = 0; i < inventory.length; i++){
+        //attempt to stack on top first
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] == null)
-				continue;
+            if(inventory[i] == null){
+                continue;
 
-			if(inventory[i].item == stack.item){
-				if(inventory[i].amount + stack.amount <= stack.item.getMaxStackSize()){
-					inventory[i].amount += stack.amount;
-					stack.amount = 0;
-					return stack;
-				}else{
-					int overflow = inventory[i].amount + stack.amount - stack.item.getMaxStackSize();
-					inventory[i].amount = stack.item.getMaxStackSize();
-					stack.amount = overflow;
-				}
-			}
+            }
+            if(inventory[i].item == stack.item){
+                if(inventory[i].amount + stack.amount <= stack.item.getMaxStackSize()){
+                    inventory[i].amount += stack.amount;
+                    stack.amount = 0;
+                    return stack;
+                }else{
+                    int overflow = inventory[i].amount + stack.amount - stack.item.getMaxStackSize();
+                    inventory[i].amount = stack.item.getMaxStackSize();
+                    stack.amount = overflow;
+                }
+            }
 
-		}
+        }
 
-		//if that doesn't work, put it in a new slot
-		for(int i = 0; i < inventory.length; i++){
+        //if that doesn't work, put it in a new slot
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] == null){
-				inventory[i] = stack.clone();
-				stack.amount = 0;
-				return stack;
-			}
-		}
+            if(inventory[i] == null){
+                inventory[i] = stack.clone();
+                stack.amount = 0;
+                return stack;
+            }
+        }
 
-		return stack;
-	}
+        return stack;
+    }
 
-	public int size(){
-		return inventory.length;
-	}
+    public int size(){
+        return inventory.length;
+    }
 
-	public boolean full(){
-		return usedSlots() == size();
-	}
+    public boolean full(){
+        return usedSlots() == size();
+    }
 
-	public int usedSlots(){
-		int slots = 0;
-		for(int i = 0; i < inventory.length; i++){
+    public int usedSlots(){
+        int slots = 0;
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] != null)
-				slots++;
-		}
+            if(inventory[i] != null){
+                slots++;
+            }
+        }
 
-		return slots;
-	}
+        return slots;
+    }
 
-	public void clear(){
-		for(int i = 0; i < inventory.length; i++){
+    public void clear(){
+        for(int i = 0; i < inventory.length; i++){
 
-			inventory[i] = null;
-		}
+            inventory[i] = null;
+        }
 
-	}
+    }
 
-	public int getAmountOf(Item item){
-		int amount = 0;
-		for(int i = 0; i < inventory.length; i++){
+    public int getAmountOf(Item item){
+        int amount = 0;
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] != null && inventory[i].item == item){
-				amount += inventory[i].amount;
-			}
+            if(inventory[i] != null && inventory[i].item == item){
+                amount += inventory[i].amount;
+            }
 
-		}
-		return amount;
-	}
+        }
+        return amount;
+    }
 
-	public ObjectMap<Item, Integer> merge(InventoryTrait component){
-		return merge(component.inventory);
-	}
+    public ObjectMap<Item, Integer> merge(InventoryTrait component){
+        return merge(component.inventory);
+    }
 
-	/**
-	 * Adds the whole itemstack Seq to this inventory, if possible.
-	 *
-	 * @return an objectmap of items removed, with the key being the type and
-	 *         the value being the amount removed.
-	 */
-	public ObjectMap<Item, Integer> merge(ItemStack[] items){
-		temp.clear();
-		for(int i = 0; i < items.length; i++){
-			if(items[i] == null)
-				continue;
-			ItemStack add = this.addItem(items[i]);
-			if(!temp.containsKey(add.item)){
-				temp.put(add.item, items[i].amount - add.amount);
-			}else{
-				temp.put(add.item, temp.get(add.item) + items[i].amount - add.amount);
-			}
-			if(add.amount != 0){
-				items[i] = add;
-			}else{
-				items[i] = null;
-			}
+    /**
+     * Adds the whole itemstack Seq to this inventory, if possible.
+     *
+     * @return an objectmap of items removed, with the key being the type and
+     *         the value being the amount removed.
+     */
+    public ObjectMap<Item, Integer> merge(ItemStack[] items){
+        temp.clear();
+        for(int i = 0; i < items.length; i++){
+            if(items[i] == null){
+                continue;
+            }
+            ItemStack add = this.addItem(items[i]);
+            if(!temp.containsKey(add.item)){
+                temp.put(add.item, items[i].amount - add.amount);
+            }else{
+                temp.put(add.item, temp.get(add.item) + items[i].amount - add.amount);
+            }
+            if(add.amount != 0){
+                items[i] = add;
+            }else{
+                items[i] = null;
+            }
 
-		}
-		return temp;
-	}
+        }
+        return temp;
+    }
 
-	public boolean removeItem(ItemStack item){
-		ItemStack stack = new ItemStack(item);
-		for(int i = 0; i < inventory.length; i++){
+    public boolean removeItem(ItemStack item){
+        ItemStack stack = new ItemStack(item);
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] == null)
-				continue;
-			if(inventory[i].item == stack.item){
-				if(inventory[i].amount >= stack.amount){
-					inventory[i].amount -= stack.amount;
-					if(inventory[i].amount <= 0)
-						inventory[i] = null;
-					return true;
-				}else{
-					stack.amount -= inventory[i].amount;
-					inventory[i] = null;
-				}
-			}
+            if(inventory[i] == null){
+                continue;
+            }
+            if(inventory[i].item == stack.item){
+                if(inventory[i].amount >= stack.amount){
+                    inventory[i].amount -= stack.amount;
+                    if(inventory[i].amount <= 0){
+                        inventory[i] = null;
+                    }
+                    return true;
+                }else{
+                    stack.amount -= inventory[i].amount;
+                    inventory[i] = null;
+                }
+            }
 
-		}
-		return stack.amount == 0;
-	}
+        }
+        return stack.amount == 0;
+    }
 
-	public boolean removeAll(Iterable<ItemStack> items){
-		boolean removed = true;
-		for(ItemStack stack : items){
-			removed = removed && removeItem(stack);
-		}
-		return removed;
-	}
+    public boolean removeAll(Iterable<ItemStack> items){
+        boolean removed = true;
+        for(ItemStack stack : items){
+            removed = removed && removeItem(stack);
+        }
+        return removed;
+    }
 
-	public boolean removeAll(ItemStack[] items){
-		boolean removed = true;
-		for(ItemStack stack : items){
-			removed = removed && removeItem(stack);
-		}
-		return removed;
-	}
+    public boolean removeAll(ItemStack[] items){
+        boolean removed = true;
+        for(ItemStack stack : items){
+            removed = removed && removeItem(stack);
+        }
+        return removed;
+    }
 
-	public boolean hasAll(Iterable<ItemStack> items){
-		for(ItemStack stack : items){
-			if(!hasItem(stack))
-				return false;
-		}
-		return true;
-	}
+    public boolean hasAll(Iterable<ItemStack> items){
+        for(ItemStack stack : items){
+            if(!hasItem(stack)){
+                return false;
+            }
+        }
+        return true;
+    }
 
-	public boolean hasAll(ItemStack[] items){
-		for(ItemStack stack : items){
-			if(!hasItem(stack))
-				return false;
-		}
-		return true;
-	}
+    public boolean hasAll(ItemStack[] items){
+        for(ItemStack stack : items){
+            if(!hasItem(stack)){
+                return false;
+            }
+        }
+        return true;
+    }
 
-	public boolean hasItem(ItemStack item){
-		ItemStack stack = new ItemStack(item);
-		for(int i = 0; i < inventory.length; i++){
+    public boolean hasItem(ItemStack item){
+        ItemStack stack = new ItemStack(item);
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] == null)
-				continue;
-			if(inventory[i].item == stack.item){
-				if(inventory[i].amount >= stack.amount){
-					return true;
-				}else{
-					stack.amount -= inventory[i].amount;
-				}
-			}
+            if(inventory[i] == null){
+                continue;
+            }
+            if(inventory[i].item == stack.item){
+                if(inventory[i].amount >= stack.amount){
+                    return true;
+                }else{
+                    stack.amount -= inventory[i].amount;
+                }
+            }
 
-		}
-		return stack.amount == 0;
-	}
+        }
+        return stack.amount == 0;
+    }
 
-	public int quantityOf(Item item){
-		int sum = 0;
-		for(int i = 0; i < inventory.length; i++){
+    public int quantityOf(Item item){
+        int sum = 0;
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] != null && inventory[i].item == item){
-				sum += inventory[i].amount;
-			}
+            if(inventory[i] != null && inventory[i].item == item){
+                sum += inventory[i].amount;
+            }
 
-		}
-		return sum;
-	}
+        }
+        return sum;
+    }
 
-	/** Populates the given Seq with itemstacks, no duplicates. */
-	public Seq<ItemStack> asArray(){
-		tempArray.clear();
+    /** Populates the given Seq with itemstacks, no duplicates. */
+    public Seq<ItemStack> asArray(){
+        tempArray.clear();
 
-		forEach(stack -> {
-			for(ItemStack other : tempArray){
-				if(other.item == stack.item){
-					other.amount += stack.amount;
-					return;
-				}
-			}
-			tempArray.add(stack.clone());
-		});
+        forEach(stack -> {
+            for(ItemStack other : tempArray){
+                if(other.item == stack.item){
+                    other.amount += stack.amount;
+                    return;
+                }
+            }
+            tempArray.add(stack.clone());
+        });
 
-		return tempArray;
-	}
+        return tempArray;
+    }
 
-	public void forEach(Consumer<ItemStack> cons){
-		for(int i = 0; i < inventory.length; i++){
+    public void forEach(Cons<ItemStack> cons){
+        for(int i = 0; i < inventory.length; i++){
 
-			if(inventory[i] != null)
-				cons.accept(inventory[i]);
+            if(inventory[i] != null){
+                cons.get(inventory[i]);
 
-		}
-	}
+            }
+        }
+    }
 
-	public String toString(){
-		StringBuilder builder = new StringBuilder();
-		for(int i = 0; i < inventory.length; i++){
+    public String toString(){
+        StringBuilder builder = new StringBuilder();
+        for(int i = 0; i < inventory.length; i++){
 
-			builder.append("[" + inventory[i] + "]");
+            builder.append("[" + inventory[i] + "]");
 
-			builder.append("\n");
-		}
-		return builder.toString();
-	}
+            builder.append("\n");
+        }
+        return builder.toString();
+    }
 
 }

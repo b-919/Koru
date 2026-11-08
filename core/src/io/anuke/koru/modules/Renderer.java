@@ -1,354 +1,354 @@
 package io.anuke.koru.modules;
 
-import arc.Core;
-import arc.graphics.Color;
-import arc.math.Mathf;
-import arc.struct.Seq;
-
-import io.anuke.koru.Koru;
-import io.anuke.koru.entities.Entities;
-import io.anuke.koru.entities.Entity;
-import io.anuke.koru.entities.types.Player;
+import arc.*;
+import arc.graphics.*;
+import arc.math.*;
+import arc.struct.*;
+import io.anuke.koru.*;
+import io.anuke.koru.entities.*;
+import io.anuke.koru.entities.types.*;
 import io.anuke.koru.graphics.*;
-import io.anuke.koru.graphics.lsystems.LSystems;
-import io.anuke.koru.input.InputHandler;
-import io.anuke.koru.items.BlockRecipe;
-import io.anuke.koru.items.ItemStack;
-import io.anuke.koru.items.ItemType;
-import io.anuke.koru.traits.InventoryTrait;
-import io.anuke.koru.utils.Resources;
-import io.anuke.koru.world.BreakType;
-import io.anuke.koru.world.Chunk;
-import io.anuke.koru.world.Tile;
-import io.anuke.koru.world.materials.Material;
-import io.anuke.koru.world.materials.MaterialLayer;
-import io.anuke.koru.world.materials.Materials;
+import io.anuke.koru.graphics.Graphics;
+import io.anuke.koru.graphics.lsystems.*;
+import io.anuke.koru.input.*;
+import io.anuke.koru.items.*;
+import io.anuke.koru.traits.*;
+import io.anuke.koru.utils.*;
+import io.anuke.koru.world.*;
+import io.anuke.koru.world.materials.*;
 
 public class Renderer extends RendererModule{
-	public static final int viewrangex = 32;
-	public static final int viewrangey = 26;
+    public static final int viewrangex = 32;
+    public static final int viewrangey = 26;
 
-	public static final int scale = 4;
-	public static final Color outlineColor = new Color(0.5f, 0.7f, 1f, 1f);
+    public static final int scale = 4;
+    public static final Color outlineColor = new Color(0.5f, 0.7f, 1f, 1f);
 
-	private Player player;
-	private FacetList[][] renderables = new FacetList[World.chunksize * World.loadrange * 2][World.chunksize * World.loadrange * 2];
-	private int lastcamx, lastcamy;
-
-	public Renderer() {
-		Fx.blockbreak.getClass();
+    private Player player;
+    private FacetList[][] renderables = new FacetList[World.chunksize * World.loadrange * 2][World.chunksize * World.loadrange * 2];
+    private int lastcamx, lastcamy;
+
+    public Renderer() {
+        Fx.blockbreak.getClass();
+
+        atlas = new arc.graphics.g2d.TextureAtlas(arc.Core.files.internal("sprites/sprites.atlas"));
+        arc.Core.atlas = atlas;
+        for(arc.graphics.g2d.TextureAtlas.AtlasRegion region : atlas.getRegions()){
+            int slash = region.name.lastIndexOf('/');
+            if(slash != -1){
+                String base = region.name.substring(slash + 1);
+                if(!atlas.getRegionMap().containsKey(base)){
+                    atlas.getRegionMap().put(base, region);
+                }
+            }
+        }
+        if(!atlas.getRegionMap().containsKey("white")){
+            arc.graphics.g2d.TextureAtlas.AtlasRegion blank = atlas.getRegionMap().get("blank");
+            if(blank != null){
+                atlas.getRegionMap().put("white", blank);
+            }
+        }
+
+        font = Resources.font();
 
-		atlas = new arc.graphics.g2d.TextureAtlas(arc.Core.files.internal("sprites/sprites.atlas"));
-		arc.Core.atlas = atlas;
-		for(arc.graphics.g2d.TextureAtlas.AtlasRegion region : atlas.getRegions()){
-			int slash = region.name.lastIndexOf('/');
-			if(slash != -1){
-				String base = region.name.substring(slash + 1);
-				if(!atlas.getRegionMap().containsKey(base))
-					atlas.getRegionMap().put(base, region);
-			}
-		}
-		if(!atlas.getRegionMap().containsKey("white")){
-			arc.graphics.g2d.TextureAtlas.AtlasRegion blank = atlas.getRegionMap().get("blank");
-			if(blank != null)
-				atlas.getRegionMap().put("white", blank);
-		}
+        Facets.instance().setLayerManager(new FacetLayerHandler(){{
+            allDrawLayers.add(KoruFacetLayers.water);
+        }});
 
-		font = Resources.font();
+        KoruCursors.setCursor("cursor");
+        KoruCursors.updateCursor();
 
-		Facets.instance().setLayerManager(new FacetLayerHandler(){{
-			allDrawLayers.add(KoruFacetLayers.water);
-		}});
+        Graphics.addSurface("trees", 1, 0);
+        pixelate();
+    }
 
-		KoruCursors.setCursor("cursor");
-		KoruCursors.updateCursor();
+    @Override
+    public void init(){
+        player = Koru.control.player;
+        new BaseFacet(0, Sorter.object, this::drawBlockOverlay).add();
+        new BaseFacet(-Sorter.light - 1, Sorter.object, this::drawTileOverlay).add();
+        new BaseFacet(-Sorter.light - 1, Sorter.object, this::drawSelectOverlay).add();
+    }
 
-		Graphics.addSurface("trees", 1, 0);
-		pixelate();
-	}
+    @Override
+    public void update(){
+        if(Koru.control.canMove()){
+            KoruCursors.setCursor("cursor");
+        }
 
-	@Override
-	public void init(){
-		player = Koru.control.player;
-		new BaseFacet(0, Sorter.object, this::drawBlockOverlay).add();
-		new BaseFacet(-Sorter.light - 1, Sorter.object, this::drawTileOverlay).add();
-		new BaseFacet(-Sorter.light - 1, Sorter.object, this::drawSelectOverlay).add();
-	}
+        float addx = 1f-(Core.graphics.getWidth()/scale) % 1f;
+        float addy = 1f-(Core.graphics.getHeight()/scale) % 1f;
 
-	@Override
-	public void update(){
-		if(Koru.control.canMove()){
-			KoruCursors.setCursor("cursor");
-		}
+        smoothCamera(player.pos().x + addx, player.pos().y + addy, 0.08f);
 
-		float addx = 1f-(Core.graphics.getWidth()/scale) % 1f;
-		float addy = 1f-(Core.graphics.getHeight()/scale) % 1f;
+        float lim = 7;
 
-		smoothCamera(player.pos().x + addx, player.pos().y + addy, 0.08f);
+        if(Math.abs(player.pos().x - camera.position.x) > lim){
+            camera.position.x = player.pos().x - Mathf.clamp(player.pos().x - camera.position.x, -lim, lim);
+        }
 
-		float lim = 7;
+        if(Math.abs(player.pos().y - camera.position.y) > lim){
+            camera.position.y = player.pos().y - Mathf.clamp(player.pos().y - camera.position.y, -lim, lim);
+        }
 
-		if(Math.abs(player.pos().x - camera.position.x) > lim){
-			camera.position.x = player.pos().x - Mathf.clamp(player.pos().x - camera.position.x, -lim, lim);
-		}
+        float lastx = camera.position.x;
+        float lasty = camera.position.y;
 
-		if(Math.abs(player.pos().y - camera.position.y) > lim){
-			camera.position.y = player.pos().y - Mathf.clamp(player.pos().y - camera.position.y, -lim, lim);
-		}
+        camera.position.set((int)lastx + addx, (int)lasty + addy);
+
+        Tile playerTile = Koru.world.getWorldTile(player.pos().x, player.pos().y);
+        LightRenderer.setAmbient(playerTile == null ? 1f : playerTile.light());
 
-		float lastx = camera.position.x;
-		float lasty = camera.position.y;
+        draw();
 
-		camera.position.set((int)lastx + addx, (int)lasty + addy);
+        camera.position.set(lastx, lasty);
 
-		Tile playerTile = Koru.world.getWorldTile(player.pos().x, player.pos().y);
-		LightRenderer.setAmbient(playerTile == null ? 1f : playerTile.light());
+        if(Koru.control.canMove()){
+            KoruCursors.updateCursor();
+        }
+    }
 
-		draw();
+    @Override
+    public void draw(){
+        camera.update();
+        arc.graphics.g2d.Draw.proj(camera);
 
-		camera.position.set(lastx, lasty);
+        if(pixelate) beginPixel();
 
-		if(Koru.control.canMove())
-			KoruCursors.updateCursor();
-	}
+        clearScreen();
 
-	@Override
-	public void draw(){
-		camera.update();
-		arc.graphics.g2d.Draw.proj(camera);
+        LSystems.cacheAll();
 
-		if(pixelate) beginPixel();
+        drawMap();
+        Facets.instance().renderTiles();
 
-		clearScreen();
+        Seq<Entity> sorted = null;
+        if(Entities.instance != null){
+            sorted = new Seq<>(Entities.all());
+            sorted.sort((a, b) -> Float.compare(a.pos().y, b.pos().y));
+            for(Entity entity : sorted){
+                entity.drawShadow();
+            }
+            Draw.z(0);
+        }
 
-		LSystems.cacheAll();
+        ShadowRenderer.draw();
+        Facets.instance().renderObjects();
 
-		drawMap();
-		Facets.instance().renderTiles();
+        if(sorted != null){
+            for(Entity entity : sorted){
+                entity.draw();
+            }
+        }
 
-		Seq<Entity> sorted = null;
-		if(Entities.instance != null){
-			sorted = new Seq<>(Entities.all());
-			sorted.sort((a, b) -> Float.compare(a.pos().y, b.pos().y));
-			for(Entity entity : sorted){
-				entity.drawShadow();
-			}
-			Draw.z(0);
-		}
+        if(pixelate) endPixel();
 
-		ShadowRenderer.draw();
-		Facets.instance().renderObjects();
+        LightRenderer.draw();
 
-		if(sorted != null){
-			for(Entity entity : sorted){
-				entity.draw();
-			}
-		}
+        if(Koru.control.canMove()){
+            record();
+        }
+    }
 
-		if(pixelate) endPixel();
+    void drawSelectOverlay(BaseFacet r){
+        if(Koru.ui.menuOpen()) return;
 
-		LightRenderer.draw();
+        Tile tile = Koru.world.getTile(Koru.control.cursorX(), Koru.control.cursorY());
+        ItemStack stack = player.inventory.hotbarStack();
 
-		if(Koru.control.canMove()){
-			record();
-		}
-	}
+        if(stack != null && tile != null && Koru.control.playerReachesBlock() && !tile.wall().interactable()){
+            Material select = null;
 
-	void drawSelectOverlay(BaseFacet r){
-		if(Koru.ui.menuOpen()) return;
+            if(stack.breaks(tile.wall().breakType()) && tile.wall().isBreakable()){
+                select = tile.wall();
+            }else if(stack.breaks(tile.topFloor().breakType()) && tile.canRemoveTile() && tile.topFloor().isBreakable()){
+                select = tile.topFloor();
+            }
 
-		Tile tile = Koru.world.getTile(Koru.control.cursorX(), Koru.control.cursorY());
-		ItemStack stack = player.inventory.hotbarStack();
+            if(select == null) return;
 
-		if(stack != null && tile != null && Koru.control.playerReachesBlock() && !tile.wall().interactable()){
-			Material select = null;
+            if(select.breakType() == BreakType.stone){
+                KoruCursors.setCursor("pickaxe");
+            }else if(select.breakType() == BreakType.wood){
+                KoruCursors.setCursor("axe");
+            }
 
-			if(stack.breaks(tile.wall().breakType()) && tile.wall().isBreakable()){
-				select = tile.wall();
-			}else if(stack.breaks(tile.topFloor().breakType()) && tile.canRemoveTile() && tile.topFloor().isBreakable()){
-				select = tile.topFloor();
-			}
+            FacetList list = getRenderable(Koru.control.cursorX(), Koru.control.cursorY());
 
-			if(select == null) return;
+            if(list.facets.size == 0) return;
 
-			if(select.breakType() == BreakType.stone){
-				KoruCursors.setCursor("pickaxe");
-			}else if(select.breakType() == BreakType.wood){
-				KoruCursors.setCursor("axe");
-			}
+            KoruFacet facet = null;
 
-			FacetList list = getRenderable(Koru.control.cursorX(), Koru.control.cursorY());
+            for(int i = list.facets.size - 1; i >= 0; i --){
+                if(list.facets.get(i) instanceof KoruFacet){
+                    facet = (KoruFacet)list.facets.get(i);
+                    break;
+                }
+            }
 
-			if(list.facets.size == 0) return;
+            Shaders.inline.region = facet.sprite;
+            Shaders.inline.color = outlineColor;
 
-			KoruFacet facet = null;
+            Graphics.end();
+            Graphics.shader(Shaders.inline);
+            Graphics.begin();
+            facet.draw();
+            Graphics.shader();
+        }
 
-			for(int i = list.facets.size - 1; i >= 0; i --){
-				if(list.facets.get(i) instanceof KoruFacet){
-					facet = (KoruFacet)list.facets.get(i);
-					break;
-				}
-			}
+    }
 
-			Shaders.inline.region = facet.sprite;
-			Shaders.inline.color = outlineColor;
+    void drawTileOverlay(BaseFacet r){
+        if(Koru.ui.menuOpen()) return;
 
-			Graphics.end();
-			Graphics.shader(Shaders.inline);
-			Graphics.begin();
-			facet.draw();
-			Graphics.shader();
-		}
+        int x = Koru.control.cursorX();
+        int y = Koru.control.cursorY();
 
-	}
+        Tile tile = Koru.world.getTile(x, y);
 
-	void drawTileOverlay(BaseFacet r){
-		if(Koru.ui.menuOpen()) return;
+        if(tile != null && tile.wall().interactable() && Koru.control.playerReachesBlock()){
+            KoruCursors.setCursor("select");
 
-		int x = Koru.control.cursorX();
-		int y = Koru.control.cursorY();
+            FacetList list = getRenderable(Koru.control.cursorX(), Koru.control.cursorY());
+            SpriteFacet facet = null;
 
-		Tile tile = Koru.world.getTile(x, y);
+            for(Facet check : list.facets){
+                if(check instanceof SpriteFacet && !(check.provider == Sorter.tile && check.getLayer() > 0) &&
+                        check.getLayer() != Sorter.shadow &&
+                        (facet == null || check.compareTo(facet) > 0)){
+                    facet = (SpriteFacet)check;
+                }
+            }
 
-		if(tile != null && tile.wall().interactable() && Koru.control.playerReachesBlock()){
-			KoruCursors.setCursor("select");
+            if(facet == null) return;
 
-			FacetList list = getRenderable(Koru.control.cursorX(), Koru.control.cursorY());
-			SpriteFacet facet = null;
+            Shaders.outline.color = outlineColor;
+            Shaders.outline.region = facet.sprite;
 
-			for(Facet check : list.facets){
-				if(check instanceof SpriteFacet && !(check.provider == Sorter.tile && check.getLayer() > 0) &&
-						check.getLayer() != Sorter.shadow &&
-						(facet == null || check.compareTo(facet) > 0)){
-					facet = (SpriteFacet)check;
-				}
-			}
+            Graphics.end();
+            Graphics.shader(Shaders.outline);
+            Graphics.begin();
 
-			if(facet == null) return;
+            facet.draw();
 
-			Shaders.outline.color = outlineColor;
-			Shaders.outline.region = facet.sprite;
+            Graphics.shader();
+        }
+    }
 
-			Graphics.end();
-			Graphics.shader(Shaders.outline);
-			Graphics.begin();
+    void drawBlockOverlay(BaseFacet r){
 
-			facet.draw();
+        int x = Koru.control.cursorX();
+        int y = Koru.control.cursorY();
 
-			Graphics.shader();
-		}
-	}
+        r.layer = y * World.tilesize;
 
-	void drawBlockOverlay(BaseFacet r){
+        r.sort(Sorter.object);
 
-		int x = Koru.control.cursorX();
-		int y = Koru.control.cursorY();
+        InventoryTrait inv = player.inventory;
 
-		r.layer = y * World.tilesize;
+        Tile tile = Koru.world.getTile(x, y);
 
-		r.sort(Sorter.object);
+        if(inv.recipe != -1 && inv.hotbarStack() != null && inv.hotbarStack().item.isType(ItemType.placer)
+                && inv.hasAll(BlockRecipe.getRecipe(inv.recipe).requirements())){
 
-		InventoryTrait inv = player.inventory;
+            if(Mathf.dst(World.world(x), World.world(y), player.pos().x, player.pos().y) < InputHandler.reach && World.isPlaceable(BlockRecipe.getRecipe(inv.recipe).result(), tile)){
+                Draw.color(0.5f, 1f, 0.5f, 0.3f);
+            }else{
+                Draw.color(1f, 0.5f, 0.5f, 0.3f);
+            }
 
-		Tile tile = Koru.world.getTile(x, y);
+            Material result = BlockRecipe.getRecipe(inv.recipe).result();
 
-		if(inv.recipe != -1 && inv.hotbarStack() != null && inv.hotbarStack().item.isType(ItemType.placer)
-				&& inv.hasAll(BlockRecipe.getRecipe(inv.recipe).requirements())){
+            if(result.isLayer(MaterialLayer.floor)){
+                Draw.rect("blank", x*World.tilesize, y*World.tilesize, 12, 12);
+            }else{
+                Draw.grect("block", x*World.tilesize, y*World.tilesize- World.tilesize/2, 12, 20);
+            }
 
-			if(Mathf.dst(World.world(x), World.world(y), player.pos().x, player.pos().y) < InputHandler.reach && World.isPlaceable(BlockRecipe.getRecipe(inv.recipe).result(), tile)){
-				Draw.color(0.5f, 1f, 0.5f, 0.3f);
-			}else{
-				Draw.color(1f, 0.5f, 0.5f, 0.3f);
-			}
+            Draw.color();
+        }
 
-			Material result = BlockRecipe.getRecipe(inv.recipe).result();
+    }
 
-			if(result.isLayer(MaterialLayer.floor)){
-				Draw.rect("blank", x*World.tilesize, y*World.tilesize, 12, 12);
-			}else{
-				Draw.grect("block", x*World.tilesize, y*World.tilesize- World.tilesize/2, 12, 20);
-			}
+    void drawMap(){
+        if(Core.graphics.getFrameId() == 5){
+            updateTiles();
 
-			Draw.color();
-		}
+        }
+        int camx = Math.round(camera.position.x / World.tilesize), camy = Math.round(camera.position.y / World.tilesize);
 
-	}
+        if(lastcamx != camx || lastcamy != camy){
+            updateTiles();
+        }
 
-	void drawMap(){
-		if(Core.graphics.getFrameId() == 5)
-			updateTiles();
+        lastcamx = camx;
+        lastcamy = camy;
+    }
 
-		int camx = Math.round(camera.position.x / World.tilesize), camy = Math.round(camera.position.y / World.tilesize);
+    FacetList getRenderable(int worldx, int worldy){
+        int camx = Koru.world.toChunkCoords(camera.position.x), camy = Koru.world.toChunkCoords(camera.position.y);
+        return renderables[(worldx + renderables.length/2 - camx*World.chunksize)][(worldy + renderables[0].length/2 - camy*World.chunksize)];
+    }
 
-		if(lastcamx != camx || lastcamy != camy){
-			updateTiles();
-		}
+    public void invalidateTiles(){
+        lastcamx = -9999999;
+        lastcamy = -9999999;
+    }
 
-		lastcamx = camx;
-		lastcamy = camy;
-	}
+    public void updateTiles(){
+        LightRenderer.clearLights();
 
-	FacetList getRenderable(int worldx, int worldy){
-		int camx = Koru.world.toChunkCoords(camera.position.x), camy = Koru.world.toChunkCoords(camera.position.y);
-		return renderables[(worldx + renderables.length/2 - camx*World.chunksize)][(worldy + renderables[0].length/2 - camy*World.chunksize)];
-	}
+        int camx = Math.round(camera.position.x / World.tilesize), camy = Math.round(camera.position.y / World.tilesize);
+        for(int chunkx = 0; chunkx < World.loadrange * 2; chunkx++){
+            for(int chunky = 0; chunky < World.loadrange * 2; chunky++){
+                Chunk chunk = Koru.world.chunks[chunkx][chunky];
+                if(chunk == null){
+                    continue;
+                }
+                for(int x = 0; x < World.chunksize; x++){
+                    for(int y = 0; y < World.chunksize; y++){
+                        int worldx = chunk.worldX() + x;
+                        int worldy = chunk.worldY() + y;
+                        int rendx = chunkx * World.chunksize + x, rendy = chunky * World.chunksize + y;
 
-	public void invalidateTiles(){
-		lastcamx = -9999999;
-		lastcamy = -9999999;
-	}
+                        Tile tile = chunk.tiles[x][y];
 
-	public void updateTiles(){
-		LightRenderer.clearLights();
+                        if(renderables[rendx][rendy] != null){
+                            renderables[rendx][rendy].free();
 
-		int camx = Math.round(camera.position.x / World.tilesize), camy = Math.round(camera.position.y / World.tilesize);
-		for(int chunkx = 0; chunkx < World.loadrange * 2; chunkx++){
-			for(int chunky = 0; chunky < World.loadrange * 2; chunky++){
-				Chunk chunk = Koru.world.chunks[chunkx][chunky];
-				if(chunk == null)
-					continue;
-				for(int x = 0; x < World.chunksize; x++){
-					for(int y = 0; y < World.chunksize; y++){
-						int worldx = chunk.worldX() + x;
-						int worldy = chunk.worldY() + y;
-						int rendx = chunkx * World.chunksize + x, rendy = chunky * World.chunksize + y;
+                        }
+                        if(Math.abs(worldx - camx) > viewrangex || Math.abs(worldy - camy) > viewrangey){
+                            continue;
 
-						Tile tile = chunk.tiles[x][y];
+                        }
+                        if(renderables[rendx][rendy] != null){
+                            renderables[rendx][rendy].free();
+                        }else{
+                            renderables[rendx][rendy] = new FacetList();
+                        }
 
-						if(renderables[rendx][rendy] != null)
-							renderables[rendx][rendy].free();
+                        if(tile.topFloor() != Materials.air && Math.abs(worldx * 12 - camera.position.x + 6) < camera.width / 2 + 24 && Math.abs(worldy * 12 - camera.position.y + 6) < camera.height / 2 + 36){
+                            tile.topFloor().draw(tile, renderables[rendx][rendy]);
+                        }
 
-						if(Math.abs(worldx - camx) > viewrangex || Math.abs(worldy - camy) > viewrangey)
-							continue;
+                        if(!tile.isWallEmpty() && Math.abs(worldx * 12 - camera.position.x + 6) <
+                                camera.width / 2 + 12 + tile.wall().cullSize()
+                                && Math.abs(worldy * 12 - camera.position.y + 6) <
+                                camera.height / 2 + 12 + tile.wall().cullSize()){
+                            tile.wall().draw(tile, renderables[rendx][rendy]);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-						if(renderables[rendx][rendy] != null){
-							renderables[rendx][rendy].free();
-						}else{
-							renderables[rendx][rendy] = new FacetList();
-						}
-
-						if(tile.topFloor() != Materials.air && Math.abs(worldx * 12 - camera.position.x + 6) < camera.width / 2 + 24 && Math.abs(worldy * 12 - camera.position.y + 6) < camera.height / 2 + 36){
-							tile.topFloor().draw(tile, renderables[rendx][rendy]);
-						}
-
-						if(!tile.isWallEmpty() && Math.abs(worldx * 12 - camera.position.x + 6) <
-								camera.width / 2 + 12 + tile.wall().cullSize()
-								&& Math.abs(worldy * 12 - camera.position.y + 6) <
-								camera.height / 2 + 12 + tile.wall().cullSize()){
-							tile.wall().draw(tile, renderables[rendx][rendy]);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	public void resize(int width, int height){
-		super.resize(width, height);
-		camera.resize(width / scale, height / scale);
-		ShadowRenderer.resize(width, height);
-		LightRenderer.resize(width, height);
-	}
+    public void resize(int width, int height){
+        super.resize(width, height);
+        camera.resize(width / scale, height / scale);
+        ShadowRenderer.resize(width, height);
+        LightRenderer.resize(width, height);
+    }
 }
 
 

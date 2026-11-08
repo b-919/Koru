@@ -1,26 +1,19 @@
 package io.anuke.koru.desktop;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import arc.*;
+import arc.backend.sdl.*;
+import io.anuke.koru.*;
 
-import arc.Files;
-import arc.backend.sdl.SdlApplication;
-import arc.backend.sdl.SdlConfig;
+public class DesktopLauncher{
+    public static void main(String[] args){
+        SdlConfig config = new SdlConfig();
+        config.maximized = true;
+        config.decorated = true;
+        config.width = 1280;
+        config.height = 720;
+        config.setWindowIcon(Files.FileType.internal, "sprites/logo.png");
+        config.title = "Koru";
 
-import io.anuke.koru.Koru;
-
-public class DesktopLauncher {
-
-	public static void main (String[] arg){
-		SdlConfig config = new SdlConfig();
-		Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-		config.maximized = true;
-		config.decorated = true;
-		config.width = d.width;
-		config.height = d.height-100;
-		config.setWindowIcon(Files.FileType.internal, "sprites/logo.png");
-		config.title = "Koru";
-
-		new SdlApplication(new Koru(), config);
-	}
+        new SdlApplication(new Koru(), config);
+    }
 }
