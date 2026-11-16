@@ -39,7 +39,7 @@ public class LightRenderer{
     }
 
     public static void draw(){
-        ambient = Mathf.lerp(ambient, target, Math.min(0.08f * Time.delta, 1f));
+        ambient = Mathf.lerp(ambient, target, Math.min(0.03f * Time.delta, 1f));
 
         // Daylight with no relevant lights changes nothing.
         if(ambient >= 0.999f && target >= 0.999f) return;
@@ -102,7 +102,7 @@ public class LightRenderer{
     private static void blur(int width, int height){
         Gl.disable(Gl.blend);
 
-        for(int i = 0; i < 3; i++){
+        for(int i = 0; i < 4; i++){
             blurShader.bind();
             blurShader.setUniformf("size", width, height);
             blurShader.setUniformf("dir", 1f, 0f);
@@ -168,7 +168,7 @@ public class LightRenderer{
             "uniform vec2 dir;\n" +
             "uniform vec2 size;\n" +
             "void main(){\n" +
-            "    vec2 off = dir / size * 2.0;\n" +
+            "    vec2 off = dir / size * 2.5;\n" +
             "    vec4 sum = texture2D(u_texture, v_texCoords) * 0.2270270270;\n" +
             "    sum += texture2D(u_texture, v_texCoords + off * 1.3846153846) * 0.3162162162;\n" +
             "    sum += texture2D(u_texture, v_texCoords - off * 1.3846153846) * 0.3162162162;\n" +
@@ -204,15 +204,16 @@ public class LightRenderer{
 
     private static float castRay(float x, float y, float dx, float dy, float maxDist){
         float ts = World.tilesize;
-        int cellX = Mathf.floor(x / ts), cellY = Mathf.floor(y / ts);
+        // tiles are centered on their world coordinates, not on the origin, so the DDA cells must match World.tile
+        int cellX = World.tile(x), cellY = World.tile(y);
 
         int stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
         int stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
 
         float tDeltaX = dx != 0 ? Math.abs(ts / dx) : Float.MAX_VALUE;
         float tDeltaY = dy != 0 ? Math.abs(ts / dy) : Float.MAX_VALUE;
-        float tMaxX = dx != 0 ? (stepX > 0 ? (cellX + 1) * ts - x : x - cellX * ts) / Math.abs(dx) : Float.MAX_VALUE;
-        float tMaxY = dy != 0 ? (stepY > 0 ? (cellY + 1) * ts - y : y - cellY * ts) / Math.abs(dy) : Float.MAX_VALUE;
+        float tMaxX = dx != 0 ? (stepX > 0 ? (cellX + 0.5f) * ts - x : x - (cellX - 0.5f) * ts) / Math.abs(dx) : Float.MAX_VALUE;
+        float tMaxY = dy != 0 ? (stepY > 0 ? (cellY + 0.5f) * ts - y : y - (cellY - 0.5f) * ts) / Math.abs(dy) : Float.MAX_VALUE;
 
         while(true){
             float t;

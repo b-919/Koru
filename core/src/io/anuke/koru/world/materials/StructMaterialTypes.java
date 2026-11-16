@@ -14,9 +14,12 @@ public class StructMaterialTypes{
             lightc.a = 0.7f;
         }
 
-        public void draw(Tile tile, FacetList group){
+        @Override
+        public void addLight(Tile tile){
             LightRenderer.addLight(tile.worldx(), tile.worldy(), 230f, lightc);
+        }
 
+        public void draw(Tile tile, FacetList group){
             new KoruFacet("torchflame1"){
                 public void draw(){
                     sprite.set(Draw.region("torchflame" + frame(tile)));
@@ -30,15 +33,18 @@ public class StructMaterialTypes{
                     float scale = 1f + (float)Math.sin(arc.util.Time.time/7f + tile.rand(100)/30f)/25f + (float)Math.random()/20f;
                     Draw.color(color);
                     Draw.rect(sprite, x + sprite.width/2f, y + sprite.height/2f, sprite.width * scale, sprite.height * scale);
+                    Draw.color();
                 }
             }.light().set(tile.worldx(), tile.worldy()+6).center().color(0.5f, 0.4f, 0.2f).add(group);
 
             //actual torch
             new KoruFacet(name){
                 public void draw(){
+                    Draw.color();
                     Draw.rect(sprite, x + sprite.width/2f, y + sprite.height/2f);
                     Draw.color(1,1,1,color.a);
                     Draw.crect("torchflame" + frame(tile), x, y);
+                    Draw.color();
                 }
             }.set(tile.worldx(), tile.worldy() + offset()).layer(tile.worldy()).centerX()
             .sort(Sorter.object)

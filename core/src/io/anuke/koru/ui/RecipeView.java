@@ -57,6 +57,7 @@ public class RecipeView extends Table{
         @Override
         public void draw(){
             float alpha = parentAlpha;
+            Draw.color();
 
             Skin.instance.get(Koru.control.player.inventory.recipe == index ? "slotset" : (click.isOver() ? "slotselect2" : "slot2"), Drawable.class).draw(x, y, width, height);
 
@@ -73,6 +74,7 @@ public class RecipeView extends Table{
 
             Draw.rect(region, x + width/2f, y + height/2f,
                     region.width*scale, region.height*scale);
+            Draw.color();
         }
     }
 }

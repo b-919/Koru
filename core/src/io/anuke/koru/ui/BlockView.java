@@ -53,9 +53,13 @@ public class BlockView extends Table{
         public void draw(){
             float alpha = parentAlpha;
             Batch batch = Core.batch;
+            Draw.color();
             Skin.instance.get("slot", Drawable.class).draw(x, y, width, height);
 
-            if(stacks == null) return;
+            if(stacks == null){
+                Draw.color();
+                return;
+            }
 
             InventoryTrait inv = Koru.control.player.inventory;
 
@@ -74,6 +78,8 @@ public class BlockView extends Table{
 
                 Resources.font2().setColor(Color.white);
             }
+
+            Draw.color();
         }
 
         public void set(ItemStack[] stack){

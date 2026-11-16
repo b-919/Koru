@@ -13,6 +13,14 @@ public abstract class FacetLayer {
 
     public abstract boolean acceptFacet(Facet facet);
     public abstract boolean layerEquals(float f);
-    public void begin() {}
-    public void end() {}
+
+    /** Starts drawing this layer into its off-screen surface. */
+    public void begin(){
+        Graphics.surface(name);
+    }
+
+    /** Ends the current surface. */
+    public void end(){
+        Graphics.surface();
+    }
 }

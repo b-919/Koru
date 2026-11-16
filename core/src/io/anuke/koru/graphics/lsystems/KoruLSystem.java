@@ -134,6 +134,7 @@ public class KoruLSystem extends LSystem implements Disposable{
                     io.anuke.koru.graphics.Graphics.end();
 
                     TextureRegion region = ScreenUtils.getFrameBufferTexture(screenX, screenY, screenWidth, screenHeight);
+                    region.texture.setFilter(Texture.TextureFilter.nearest);
                     regions[i] = region;
                     if(i == 0 && writeOut){
                         arc.graphics.Pixmap pixmap = ScreenUtils.getFrameBufferPixmap(0, 0, Core.graphics.getWidth(), Core.graphics.getHeight());
@@ -170,6 +171,7 @@ public class KoruLSystem extends LSystem implements Disposable{
             }
             float time = 100f / data.swayphase;
             TextureRegion region = regions[(int)((Time.time + this.timeOffset) / time) % regions.length];
+            Draw.color();
             Draw.rect(region, x + offsetx, y + region.height/2 - 2);
         }
     }

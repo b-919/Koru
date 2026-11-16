@@ -47,6 +47,8 @@ public class TileCollision{
 
         float left = ox + offX - hx, bottom = oy + offY - hy;
         float right = left + entity.tcolWidth, top = bottom + entity.tcolHeight;
+        float centerX = ox + offX, centerY = oy + offY;
+        float eps = 0.0001f;
 
         if(xAxis){
             int minTx = World.tile(Math.min(left, left + amount)) - 1;
@@ -62,15 +64,15 @@ public class TileCollision{
                     if(!solid(tx, ty)) continue;
 
                     Rect block = getHitbox(tx, ty);
-                    if(block.y >= top - 0.0001f || block.y + block.height <= bottom + 0.0001f) continue;
+                    if(block.y >= top - eps || block.y + block.height <= bottom + eps) continue;
 
                     if(amount > 0){
-                        if(block.x >= right - 0.0001f || block.x + block.width > left + 0.0001f){
+                        if(block.x >= centerX - eps && block.x < right + amount + eps){
                             nearest = Math.min(nearest, block.x);
                             hit = true;
                         }
                     }else{
-                        if(block.x + block.width <= left + 0.0001f || block.x < right - 0.0001f){
+                        if(block.x + block.width <= centerX + eps && block.x + block.width > left + amount - eps){
                             nearest = Math.max(nearest, block.x + block.width);
                             hit = true;
                         }
@@ -98,15 +100,15 @@ public class TileCollision{
                     if(!solid(tx, ty)) continue;
 
                     Rect block = getHitbox(tx, ty);
-                    if(block.x >= right - 0.0001f || block.x + block.width <= left + 0.0001f) continue;
+                    if(block.x >= right - eps || block.x + block.width <= left + eps) continue;
 
                     if(amount > 0){
-                        if(block.y >= top - 0.0001f || block.y + block.height > bottom + 0.0001f){
+                        if(block.y >= centerY - eps && block.y < top + amount + eps){
                             nearest = Math.min(nearest, block.y);
                             hit = true;
                         }
                     }else{
-                        if(block.y + block.height <= bottom + 0.0001f || block.y < top - 0.0001f){
+                        if(block.y + block.height <= centerY + eps && block.y + block.height > bottom + amount - eps){
                             nearest = Math.max(nearest, block.y + block.height);
                             hit = true;
                         }

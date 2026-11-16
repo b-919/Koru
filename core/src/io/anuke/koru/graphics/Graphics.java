@@ -70,6 +70,8 @@ public class Graphics{
         arc.graphics.g2d.Draw.rect(region, Core.graphics.getWidth()/2f, Core.graphics.getHeight()/2f,
                 Core.graphics.getWidth(), Core.graphics.getHeight());
 
+        end();
+
         beginCam();
     }
 
@@ -116,6 +118,7 @@ public class Graphics{
             if(buffer == null || buffer.getWidth() != width || buffer.getHeight() != height){
                 if(buffer != null) buffer.dispose();
                 buffer = new FrameBuffer(Pixmap.Format.rgba8888, width, height, false);
+                buffer.getTexture().setFilter(Texture.TextureFilter.nearest);
                 region = null;
             }
 
@@ -128,7 +131,10 @@ public class Graphics{
         }
 
         TextureRegion region(){
-            if(region == null) region = new TextureRegion(buffer.getTexture());
+            if(region == null){
+                region = new TextureRegion(buffer.getTexture());
+                region.flip(false, true);
+            }
             return region;
         }
 

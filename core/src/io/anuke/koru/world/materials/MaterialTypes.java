@@ -2,6 +2,7 @@ package io.anuke.koru.world.materials;
 
 import arc.func.*;
 import arc.graphics.*;
+import arc.graphics.g2d.TextureRegion;
 import arc.math.*;
 import arc.math.geom.*;
 import arc.util.*;
@@ -65,7 +66,9 @@ public class MaterialTypes{
         }
 
         public void drawTile(Tile tile){
+            Draw.color();
             Draw.rect(name + ((int)(arc.util.Time.time/10f) % variants)+1, tile.worldx(), tile.worldy());
+            Draw.color();
         }
     }
 
@@ -154,6 +157,8 @@ public class MaterialTypes{
         public void drawEdge(Tile tile, FacetList list){
             if(Draw.hasRegion(edge + "edge")){
                 new ReflectionlessFacet( tile.worldy() - World.tilesize / 2f - 0.001f, p -> {
+                    Draw.color();
+
                     float posx = tile.x * World.tilesize, posy = tile.y * World.tilesize + height;
 
                     int dir = 0;
@@ -178,6 +183,7 @@ public class MaterialTypes{
                         dir++;
                     }
 
+                    Draw.color();
                 }).sort(Sorter.object).add(list);
             }
         }
@@ -245,6 +251,43 @@ public class MaterialTypes{
 
                 facet.skewX(Mathf.sin(time, 1f, intensity));
             }).add(list);
+        }
+
+        @Override
+        public void draw(Tile tile){
+            drawFalling(tile, 0f, 1f);
+        }
+
+        /** Draws the tree with its top part rotating around the trunk. Used by the cut animation. */
+        public void drawFalling(Tile tile, float rotation, float alpha){
+            if(tile == null) return;
+
+            TextureRegion region = Draw.region(name + variantString(tile));
+            if(region == null) return;
+
+            float offset = variantOffset(tile);
+
+            float x = tile.worldx();
+            float y = tile.worldy() + offset;
+
+            int trunk = Math.max(1, region.height / 8);
+            int topHeight = region.height - trunk;
+
+            if(topHeight <= 0){
+                Draw.color(1f, 1f, 1f, alpha);
+                Draw.rect(region, x, y + region.height/2f, region.width, region.height);
+                Draw.color();
+                return;
+            }
+
+            TextureRegion bottom = new TextureRegion(region, 0, region.height - trunk, region.width, trunk);
+            TextureRegion top = new TextureRegion(region, 0, 0, region.width, topHeight);
+
+            Draw.color(1f, 1f, 1f, alpha);
+            Draw.rect(bottom, x, y + trunk/2f, region.width, trunk);
+            arc.graphics.g2d.Draw.rect(top, x, y + trunk + topHeight/2f, region.width, topHeight,
+                    region.width/2f, 0f, rotation);
+            Draw.color();
         }
 
     }
@@ -423,6 +466,7 @@ public class MaterialTypes{
                 system.timeOffset = tile.randFloat(2) * 9999f;
                 system.x = tile.worldx();
                 system.y = tile.worldy();
+                Draw.color();
                 system.draw();
             }));
 

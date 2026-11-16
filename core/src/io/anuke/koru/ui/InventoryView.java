@@ -64,6 +64,7 @@ public class InventoryView extends Table{
             drawItem(batch, alpha, Core.input.mouseX() - slotsize / 2, Core.input.mouseY() - slotsize / 2, inventory.selected);
         }
 
+        Draw.color();
         Element actor = getScene().hit(Core.input.mouseX(), Core.input.mouseY(), true);
 
         if(actor instanceof Slot){
@@ -97,6 +98,9 @@ public class InventoryView extends Table{
             Resources.font2().setColor(1, 1, 1, alpha);
             Resources.font2().draw(stack.amount + "", x + 8, y + 54);
         }
+
+        Resources.font2().setColor(Color.white);
+        Draw.color();
     }
 
     class Slot extends Element{
@@ -113,6 +117,7 @@ public class InventoryView extends Table{
         public void draw(){
             float alpha = parentAlpha;
             Batch batch = Core.batch;
+            io.anuke.koru.graphics.Draw.color();
             io.anuke.koru.graphics.Draw.alpha(alpha);
             Skin.instance.get((index == inventory.hotbar) ? "slotselect" : "slot", Drawable.class).draw(x, y, width, height);
 

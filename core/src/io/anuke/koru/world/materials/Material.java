@@ -62,6 +62,9 @@ public abstract class Material{
     /** Draws without a facet list for entity-based rendering. */
     public void draw(Tile tile){}
 
+    /** Registers any dynamic light emitted by this material at the given tile. */
+    public void addLight(Tile tile){}
+
     public void changeEvent(Tile tile){}
 
     public void onInteract(Tile tile, Entity entity){

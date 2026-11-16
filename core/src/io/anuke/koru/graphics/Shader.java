@@ -15,6 +15,7 @@ public abstract class Shader extends arc.graphics.gl.Shader {
 
     @Override
     public void bind() {
+        super.bind();
         apply();
     }
 }

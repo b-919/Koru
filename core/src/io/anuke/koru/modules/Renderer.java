@@ -65,9 +65,9 @@ public class Renderer extends RendererModule{
     @Override
     public void init(){
         player = Koru.control.player;
-        new BaseFacet(0, Sorter.object, this::drawBlockOverlay).add();
-        new BaseFacet(-Sorter.light - 1, Sorter.object, this::drawTileOverlay).add();
-        new BaseFacet(-Sorter.light - 1, Sorter.object, this::drawSelectOverlay).add();
+        new ReflectionlessFacet(0, this::drawBlockOverlay).add();
+        new ReflectionlessFacet(-Sorter.light - 1, this::drawTileOverlay).add();
+        new ReflectionlessFacet(-Sorter.light - 1, this::drawSelectOverlay).add();
     }
 
     @Override
@@ -137,8 +137,10 @@ public class Renderer extends RendererModule{
 
         if(sorted != null){
             for(Entity entity : sorted){
+                Draw.color();
                 entity.draw();
             }
+            Draw.color();
         }
 
         if(pixelate) endPixel();
@@ -312,6 +314,8 @@ public class Renderer extends RendererModule{
                         int rendx = chunkx * World.chunksize + x, rendy = chunky * World.chunksize + y;
 
                         Tile tile = chunk.tiles[x][y];
+
+                        tile.wall().addLight(tile);
 
                         if(renderables[rendx][rendy] != null){
                             renderables[rendx][rendy].free();
