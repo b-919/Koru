@@ -15,6 +15,7 @@ public class PauseDialog extends Dialog{
         cont.button("Controls", () -> Koru.ui.showControls()).row();
         cont.button("Back to Main Menu", () -> Koru.ui.leaveToTitle());
 
+        closeOnBack();
         hidden(() -> Koru.ui.onPauseClosed());
     }
 }

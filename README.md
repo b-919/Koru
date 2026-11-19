@@ -21,6 +21,7 @@ the old uCore libraries have been migrated to Arc 160.4 and Java 17.
 - Reflective water and custom shaders
 - Arc scene UI
 - Multiplayer using ArcNet and Kryo serialization
+- Android client support
 - Crabs
 - World lighting data
 - In-game chat
@@ -55,4 +56,23 @@ Compile everything without launching:
 
 ```bat
 gradlew.bat :core:compileJava :server:compileJava :desktop:compileJava
+```
+
+## Android
+
+The Android client lives in the `android` module. It requires Android 7.0 (API 24) or later,
+JDK 17 and an Android SDK with platform 35 installed.
+
+Build a debug APK:
+
+```bat
+gradlew.bat :android:assembleDebug
+```
+
+The APK is written to `android/build/outputs/apk/debug/android-debug.apk`. Install and launch it
+on a connected device or emulator with:
+
+```bat
+gradlew.bat :android:installDebug
+gradlew.bat :android:run
 ```

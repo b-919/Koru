@@ -7,6 +7,7 @@ import arc.graphics.g2d.*;
 import arc.scene.*;
 import arc.scene.event.*;
 import arc.scene.style.*;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
 import io.anuke.koru.*;
@@ -20,10 +21,11 @@ import io.anuke.koru.utils.*;
 import io.anuke.koru.world.materials.*;
 
 public class BlockView extends Table{
-    final int slotsize = 64;
+    final int slotsize = Core.app != null && Core.app.isMobile() ? 48 : 64;
     float pscale = slotsize/16;
     Requirement req = new Requirement();
     Slot selected;
+    Label reqLabel;
 
     public BlockView(){
 
@@ -32,6 +34,12 @@ public class BlockView extends Table{
         add(req).size(64);
 
         row();
+
+        if(Core.app != null && Core.app.isMobile()){
+            reqLabel = new Label("Select a block");
+            add(reqLabel).width(slotsize * Math.max(1, BlockRecipe.getAll().size)).wrap().padTop(4).left();
+            row();
+        }
 
         Table blocks = new Table();
 
@@ -101,6 +109,9 @@ public class BlockView extends Table{
                 public void clicked(InputEvent event, float x, float y){
                     selected = Slot.this;
                     req.set(recipe.requirements());
+                    if(reqLabel != null){
+                        reqLabel.setText(Recipe.formatRequirements(recipe.requirements()));
+                    }
 
                     Koru.control.player.inventory.recipe = index;
 

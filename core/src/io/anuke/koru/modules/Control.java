@@ -3,6 +3,7 @@ package io.anuke.koru.modules;
 import arc.*;
 import arc.input.*;
 import arc.math.*;
+import arc.math.geom.*;
 import arc.util.*;
 import io.anuke.koru.*;
 import io.anuke.koru.entities.*;
@@ -15,6 +16,7 @@ import io.anuke.koru.network.*;
 import io.anuke.koru.network.packets.*;
 import io.anuke.koru.traits.*;
 import io.anuke.koru.traits.DirectionTrait.*;
+import io.anuke.koru.ui.mobile.*;
 import io.anuke.koru.world.*;
 import io.anuke.koru.world.materials.*;
 
@@ -25,6 +27,9 @@ public class Control extends KoruModule implements InputProcessor{
     private float movespeed = 1.6f, dashspeed = 18f;
     private int blockx, blocky;
     private GameState state = GameState.title;
+
+    private final Vec2 cursor = new Vec2(), mobileAimOffset = new Vec2();
+    private boolean mobileAimSet = false, mobileUseHeld = false, mobileDragging = false;
 
     public Control(){
         player = new Player();
@@ -55,13 +60,17 @@ public class Control extends KoruModule implements InputProcessor{
 
     @Override
     public void update() {
-        if(Core.input.keyTap(KeyCode.escape)){
+        boolean back = Core.input.keyTap(KeyCode.back);
+
+        if(Core.input.keyTap(KeyCode.escape) || back){
             if(state == GameState.playing){
                 Koru.ui.openPauseMenu();
             }else if(state == GameState.chatting){
                 Koru.ui.toggleChat();
             }else if(state == GameState.menu && !Koru.ui.subMenuOpen()){
                 Koru.ui.resumeGame();
+            }else if(back && state == GameState.title){
+                Core.app.exit();
             }
         }
 
@@ -79,51 +88,64 @@ public class Control extends KoruModule implements InputProcessor{
 
         if(!canMove() || !Entities.instance.contains(player)) return;
 
-        arc.math.geom.Vec2 vec = io.anuke.koru.graphics.Graphics.mouseWorld();
+        if(Core.app.isMobile()){
+            updateMobileCursor();
+        }else{
+            cursor.set(io.anuke.koru.graphics.Graphics.mouseWorld());
 
-        int nx = World.tile(vec.x), ny = World.tile(vec.y);
+            int nx = World.tile(cursor.x), ny = World.tile(cursor.y);
 
-        if(Core.input.isTouched() && (nx != blockx || ny != blocky)){
-            sendInput(InputType.blockMoved, nx, ny);
+            if(Core.input.isTouched() && (nx != blockx || ny != blocky)){
+                sendInput(InputType.blockMoved, nx, ny);
+            }
+
+            blockx = nx;
+            blocky = ny;
         }
-
-        blockx = nx;
-        blocky = ny;
 
         vector.set(0, 0);
 
         float speed = (Core.input.keyDown(KeyCode.shiftLeft) ? dashspeed : movespeed);
 
-        if(Core.input.keyDown(KeyCode.w)) {
-            vector.y += speed;
-            player.direction = Direction.back;
-        }
+        if(Core.app.isMobile()){
+            MobileControls controls = Koru.ui.mobile();
+            if(controls != null){
+                vector.set(controls.joystick.vector);
+            }
 
-        if(Core.input.keyDown(KeyCode.s)) {
-            vector.y -= speed;
-            player.direction = Direction.front;
-        }
+            if(vector.len() > 0.1f){
+                player.direction = directionForAngle(Angles.angle(vector.x, vector.y));
+            }
 
-        if(Core.input.keyDown(KeyCode.a)) {
-            vector.x -= speed;
-            player.direction = Direction.left;
-        }
+            vector.scl(speed);
+        }else{
+            if(Core.input.keyDown(KeyCode.w)) {
+                vector.y += speed;
+                player.direction = Direction.back;
+            }
 
-        if(Core.input.keyDown(KeyCode.d)) {
-            vector.x += speed;
-            player.direction = Direction.right;
+            if(Core.input.keyDown(KeyCode.s)) {
+                vector.y -= speed;
+                player.direction = Direction.front;
+            }
+
+            if(Core.input.keyDown(KeyCode.a)) {
+                vector.x -= speed;
+                player.direction = Direction.left;
+            }
+
+            if(Core.input.keyDown(KeyCode.d)) {
+                vector.x += speed;
+                player.direction = Direction.right;
+            }
         }
 
         ItemStack stack = player.inventory.hotbarStack();
 
-        if(stack != null && stack.item.isType(io.anuke.koru.items.ItemType.tool)){
-            float angle = Angles.mouseAngle(Core.input.mouseWorld().x - player.pos().x, Core.input.mouseWorld().y - player.pos().y);
+        if(stack != null && stack.item.isType(io.anuke.koru.items.ItemType.tool) && (!Core.app.isMobile() || mobileAimSet)){
+            float angle = Angles.angle(cursor.x - player.pos().x, cursor.y - player.pos().y);
 
-            player.direction = Direction.forOrdinal((int)((angle-45f)/90f));
-
-            if(angle > 360-45){
-                player.direction = Direction.right;
-            }
+            player.direction = directionForAngle(angle);
         }
 
         vector.limit(speed);
@@ -136,6 +158,85 @@ public class Control extends KoruModule implements InputProcessor{
         }
 
         vector.set(0, 0);
+    }
+
+    public static Direction directionForAngle(float angle){
+        angle = Mathf.mod(angle, 360f);
+
+        if(angle < 45f || angle >= 315f) return Direction.right;
+        if(angle < 135f) return Direction.back;
+        if(angle < 225f) return Direction.left;
+        return Direction.front;
+    }
+
+    private void updateMobileCursor(){
+        if(!mobileAimSet){
+            setDefaultMobileAim();
+        }
+
+        cursor.set(player.pos.x + mobileAimOffset.x, player.pos.y + mobileAimOffset.y);
+
+        int nx = World.tile(cursor.x), ny = World.tile(cursor.y);
+
+        if(nx != blockx || ny != blocky){
+            blockx = nx;
+            blocky = ny;
+
+            if(mobileUseHeld){
+                sendInput(InputType.blockMoved, blockx, blocky);
+            }
+        }
+    }
+
+    private void setDefaultMobileAim(){
+        float distance = 24f;
+
+        if(player.direction == Direction.right){
+            mobileAimOffset.set(distance, 0);
+        }else if(player.direction == Direction.left){
+            mobileAimOffset.set(-distance, 0);
+        }else if(player.direction == Direction.back){
+            mobileAimOffset.set(0, distance);
+        }else{
+            mobileAimOffset.set(0, -distance);
+        }
+    }
+
+    public void mobileAim(int screenX, int screenY){
+        Vec2 world = Core.camera.unproject(screenX, screenY);
+
+        mobileAimSet = true;
+        mobileAimOffset.set(world.x - player.pos.x, world.y - player.pos.y);
+        cursor.set(world);
+        blockx = World.tile(cursor.x);
+        blocky = World.tile(cursor.y);
+    }
+
+    public void mobileUseDown(){
+        if(!canMove()) return;
+
+        updateMobileCursor();
+        mobileUseHeld = true;
+
+        sendInput(InputType.leftclickDown, blockx, blocky);
+    }
+
+    public void mobileUseUp(){
+        if(mobileUseHeld){
+            mobileUseHeld = false;
+            sendInput(InputType.leftclickUp);
+        }
+    }
+
+    public void resetMobileInput(){
+        mobileDragging = false;
+    }
+
+    public void selectHotbar(int slot){
+        player.inventory.hotbar = Mathf.clamp(slot, 0, 3);
+        SlotChangePacket packet = new SlotChangePacket();
+        packet.slot = player.inventory.hotbar;
+        Net.send(packet);
     }
 
     @Override
@@ -164,12 +265,7 @@ public class Control extends KoruModule implements InputProcessor{
 
 
         if(keycode.ordinal() >= KeyCode.num1.ordinal() && keycode.ordinal() <= KeyCode.num4.ordinal()){
-            player.inventory.hotbar = keycode.ordinal() - KeyCode.num1.ordinal();
-
-            SlotChangePacket packet = new SlotChangePacket();
-            packet.slot = player.inventory.hotbar;
-            Net.send(packet);
-
+            selectHotbar(keycode.ordinal() - KeyCode.num1.ordinal());
         }else if(keycode == KeyCode.q){
             sendInput(InputType.interact, blockx, blocky);
         }
@@ -198,24 +294,43 @@ public class Control extends KoruModule implements InputProcessor{
         return Mathf.dst(World.world(cursorX()), World.world(cursorY()), player.pos.x, player.pos.y) < InputHandler.reach;
     }
 
-    int cursorX(){
-        return World.tile(io.anuke.koru.graphics.Graphics.mouseWorld().x);
+    public int cursorX(){
+        return blockx;
     }
 
-    int cursorY(){
-        return World.tile(io.anuke.koru.graphics.Graphics.mouseWorld().y);
+    public int cursorY(){
+        return blocky;
+    }
+
+    public float cursorWorldX(){
+        return cursor.x;
+    }
+
+    public float cursorWorldY(){
+        return cursor.y;
+    }
+
+    public boolean isMobileActing(){
+        return mobileDragging || mobileUseHeld;
     }
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, KeyCode button){
 
         if(button == KeyCode.mouseLeft){
+            if(Core.app.isMobile()){
+                mobileAim(screenX, screenY);
+                mobileDragging = true;
+            }else{
+                cursor.set(Core.camera.unproject(screenX, screenY));
+                blockx = World.tile(cursor.x);
+                blocky = World.tile(cursor.y);
+            }
 
             sendInput(InputType.leftclickDown, blockx, blocky);
 
-            if(player.inventory.hotbarStack() == null || !(player.inventory.hotbarStack().item.isType(io.anuke.koru.items.ItemType.tool) || player.inventory.hotbarStack().item.isType(io.anuke.koru.items.ItemType.tool))){
+            if(Core.app.isMobile() || player.inventory.hotbarStack() == null || !player.inventory.hotbarStack().item.isType(io.anuke.koru.items.ItemType.tool)){
                 sendInput(InputType.interact, blockx, blocky);
-
             }
         }else if(button == KeyCode.mouseRight){
             player.inventory.recipe = -1;
@@ -227,11 +342,27 @@ public class Control extends KoruModule implements InputProcessor{
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, KeyCode button) {
+        mobileDragging = false;
+
         if(button == KeyCode.mouseLeft) {
             sendInput(InputType.leftclickUp);
         } else if(button == KeyCode.mouseRight) {
             sendInput(InputType.rightclickUp);
         }
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer){
+        if(!Core.app.isMobile() || !mobileDragging || !canMove()) return false;
+
+        int lastx = blockx, lasty = blocky;
+        mobileAim(screenX, screenY);
+
+        if(blockx != lastx || blocky != lasty){
+            sendInput(InputType.blockMoved, blockx, blocky);
+        }
+
         return false;
     }
 

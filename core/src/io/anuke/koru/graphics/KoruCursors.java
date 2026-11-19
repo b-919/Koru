@@ -34,6 +34,8 @@ public class KoruCursors{
     }
 
     public static void updateCursor(){
+        if(Core.app != null && Core.app.isMobile()) return;
+
         if(cursor != null){
             Core.graphics.cursor(loadCursor(cursor));
         }

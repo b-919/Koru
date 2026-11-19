@@ -9,7 +9,6 @@ public class Shaders{
     public static final Water water = new Water();
     public static final Mix mix = new Mix();
     public static final Round round = new Round();
-    public static final Light light = new Light();
 
     public static class Water extends Shader{
 
@@ -22,18 +21,6 @@ public class Shaders{
             setUniformf("camerapos", Core.camera.position.x, Core.camera.position.y);
             setUniformf("screensize", Core.graphics.getWidth() / 4f, Core.graphics.getHeight() / 4f);
             setUniformf("time", arc.util.Time.time);
-        }
-    }
-
-    public static class Light extends Shader{
-
-        public Light(){
-            super("light", "default");
-        }
-
-        @Override
-        public void apply(){
-
         }
     }
 

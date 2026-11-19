@@ -31,6 +31,7 @@ public class Network extends KoruModule implements NetProvider{
     private static final Timekeeper updateTimer = Timekeeper.ofTicks(packetFrequency);
 
     public String ip = "localhost";
+    public int connectPort = port;
     public boolean connecting;
     private Client client;
 
@@ -176,7 +177,7 @@ public class Network extends KoruModule implements NetProvider{
     public void connect(){
         try{
             connecting = true;
-            client.connect(1200, ip, port, port);
+            client.connect(1200, ip, connectPort, connectPort);
             Koru.log("Connecting to server..");
         }catch(Exception e){
             connecting = false;
@@ -296,7 +297,7 @@ public class Network extends KoruModule implements NetProvider{
         PositionPacket pos = new PositionPacket();
         pos.x = player.pos.x;
         pos.y = player.pos.y;
-        pos.mouseangle = Angles.mouseAngle(Core.input.mouseWorld().x - player.pos.x, Core.input.mouseWorld().y - player.pos.y);
+        pos.mouseangle = Angles.angle(Koru.control.cursorWorldX() - player.pos.x, Koru.control.cursorWorldY() - player.pos.y);
         player.input.mouseangle = pos.mouseangle;
         pos.direction = player.direction;
 

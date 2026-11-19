@@ -1,0 +1,93 @@
+apply plugin: "com.android.application"
+
+configurations{
+    natives
+}
+
+android{
+    namespace = "io.anuke.koru.android"
+    compileSdk = 35
+    buildToolsVersion = "35.0.0"
+
+    sourceSets{
+        main{
+            manifest.srcFile "AndroidManifest.xml"
+            java.srcDirs = ["src"]
+            res.srcDirs = ["res"]
+            assets.srcDirs = ["../core/assets"]
+            jniLibs.srcDirs = ["$buildDir/arcNatives"]
+        }
+    }
+
+    defaultConfig{
+        applicationId "io.anuke.koru"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        ndk{
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+        }
+    }
+
+    compileOptions{
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildTypes{
+        debug{
+            minifyEnabled = false
+        }
+
+        release{
+            //Kryo and Arc use reflection; keep shrinking disabled until proper rules are added.
+            minifyEnabled = false
+        }
+    }
+
+    packaging{
+        resources{
+            excludes += ["META-INF/robovm/**", "META-INF/*.kotlin_module"]
+        }
+    }
+}
+
+dependencies{
+    implementation project(":core")
+
+    implementation "com.github.Anuken.Arc:backend-android:$arcVersion"
+
+    natives "com.github.Anuken.Arc:natives-android:$arcVersion"
+    natives "com.github.Anuken.Arc:natives-freetype-android:$arcVersion"
+}
+
+/** Extracts the Arc native libraries from their jars into a jniLibs directory. */
+tasks.register("copyAndroidNatives"){
+    def outputDir = layout.buildDirectory.dir("arcNatives")
+    outputs.dir(outputDir)
+
+    doLast{
+        def destination = outputDir.get().asFile
+        destination.deleteDir()
+
+        configurations.natives.files.each{ jar ->
+            copy{
+                from zipTree(jar)
+                into destination
+                include "**/*.so"
+            }
+        }
+    }
+}
+
+preBuild.dependsOn "copyAndroidNatives"
+
+tasks.register("run", Exec){
+    def sdk = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+    if(sdk == null){
+        throw new GradleException("Set ANDROID_HOME to the Android SDK directory.")
+    }
+    commandLine "$sdk/platform-tools/adb", "shell", "am", "start", "-n", "io.anuke.koru/io.anuke.koru.android.AndroidLauncher"
+}

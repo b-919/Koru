@@ -49,6 +49,17 @@ public class Recipe{
         return recipes;
     }
 
+    public static String formatRequirements(ItemStack[] stacks){
+        StringBuilder builder = new StringBuilder();
+
+        for(ItemStack stack : stacks){
+            if(builder.length() > 0) builder.append('\n');
+            builder.append(stack.item.formalName()).append(" x").append(stack.amount);
+        }
+
+        return builder.toString();
+    }
+
     public static void addRecipe(Item result, ItemStack...req){
         new Recipe(result, req);
     }

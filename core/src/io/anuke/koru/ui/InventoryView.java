@@ -3,6 +3,7 @@ package io.anuke.koru.ui;
 import arc.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
+import arc.input.*;
 import arc.scene.*;
 import arc.scene.event.*;
 import arc.scene.style.*;
@@ -16,7 +17,7 @@ import io.anuke.koru.traits.*;
 import io.anuke.koru.utils.*;
 
 public class InventoryView extends Table{
-    public static final int slotsize = 64;
+    public static int slotsize = Core.app != null && Core.app.isMobile() ? 48 : 64;
     private ItemStack[] stacks;
     private InventoryTrait inventory;
 
@@ -38,14 +39,66 @@ public class InventoryView extends Table{
 
             }
             Slot slot = new Slot(i);
-            slot.clicked(() -> {
-                InventoryClickPacket packet = new InventoryClickPacket();
-                packet.index = slot.index;
-                Net.send(packet);
-            });
+            if(Core.app != null && Core.app.isMobile()){
+                slot.addListener(new InputListener(){
+                    private boolean dragging;
+                    private float downX, downY;
+
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+                        if(pointer != 0) return false;
+
+                        dragging = false;
+                        downX = x;
+                        downY = y;
+                        return true;
+                    }
+
+                    @Override
+                    public void touchDragged(InputEvent event, float x, float y, int pointer){
+                        if(pointer != 0 || dragging) return;
+
+                        Slot target = slotAt(event.stageX, event.stageY);
+                        if(Math.abs(x - downX) > 12f || Math.abs(y - downY) > 12f || (target != null && target != slot)){
+                            dragging = true;
+                            sendClick(slot.index);
+                        }
+                    }
+
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
+                        if(pointer != 0) return;
+
+                        Slot target = slotAt(event.stageX, event.stageY);
+
+                        if(dragging){
+                            if(target != null && target != slot){
+                                sendClick(target.index);
+                            }
+                        }else if(slot.index < 4){
+                            Koru.control.selectHotbar(slot.index);
+                        }
+                    }
+                });
+            }else{
+                slot.clicked(() -> sendClick(slot.index));
+            }
             add(slot).size(slotsize);
 
         }
+    }
+
+    Slot slotAt(float stageX, float stageY){
+        if(getScene() == null) return null;
+
+        Element hit = getScene().hit(stageX, stageY, true);
+        return hit instanceof Slot ? (Slot)hit : null;
+    }
+
+    void sendClick(int index){
+        InventoryClickPacket packet = new InventoryClickPacket();
+        packet.index = index;
+        Net.send(packet);
     }
 
     @Override
@@ -53,6 +106,8 @@ public class InventoryView extends Table{
         float pscale = slotsize / 16;
         Batch batch = Core.batch;
         float alpha = parentAlpha;
+        arc.math.geom.Vec2 mouse = getScene() == null ? Tmp.v1.set(Core.input.mouseX(), Core.input.mouseY())
+                : getScene().screenToStageCoordinates(Tmp.v1.set(Core.input.mouseX(), Core.input.mouseY()));
 
         Draw.color(new arc.graphics.Color(95 / 255f, 95 / 255f, 95 / 255f, 1f));
         Skin.instance.get("blank", Drawable.class).draw(x - pscale, y - pscale, width + pscale * 2, height + pscale * 2);
@@ -61,11 +116,11 @@ public class InventoryView extends Table{
         super.draw();
 
         if(inventory.selected != null){
-            drawItem(batch, alpha, Core.input.mouseX() - slotsize / 2, Core.input.mouseY() - slotsize / 2, inventory.selected);
+            drawItem(batch, alpha, mouse.x - slotsize / 2, mouse.y - slotsize / 2, inventory.selected);
         }
 
         Draw.color();
-        Element actor = getScene().hit(Core.input.mouseX(), Core.input.mouseY(), true);
+        Element actor = getScene().hit(mouse.x, mouse.y, true);
 
         if(actor instanceof Slot){
             Slot slot = (Slot) actor;
@@ -73,7 +128,7 @@ public class InventoryView extends Table{
             if(stacks[slot.index] != null){
                 Resources.font3().getData().setScale(2f);
                 Resources.font3().setColor(Color.yellow);
-                Resources.font3().draw(stacks[slot.index].item.formalName(), Core.input.mouseX(), Core.input.mouseY() + 17, 0, Align.bottomRight, false);
+                Resources.font3().draw(stacks[slot.index].item.formalName(), mouse.x, mouse.y + 17, 0, Align.bottomRight, false);
                 Resources.font3().setColor(Color.white);
             }
         }

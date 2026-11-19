@@ -1,4 +1,4 @@
-varying vec2 v_texCoords;
+varying vec2 v_texCoord;
 
 //texture samplers
 uniform sampler2D u_texture0; //diffuse map
@@ -10,7 +10,7 @@ uniform vec2 resolution; //resolution of screen
 uniform vec4 ambientColor; //ambient RGB, alpha channel is intensity 
 
 void main() {
-	vec4 diffuseColor = texture2D(u_texture0, v_texCoords);
+	vec4 diffuseColor = texture2D(u_texture0, v_texCoord);
 	vec2 lighCoord = (gl_FragCoord.xy / resolution.xy);
 	vec4 light = texture2D(u_lightmap, lighCoord);
 	vec4 dark = texture2D(u_darkmap, lighCoord);

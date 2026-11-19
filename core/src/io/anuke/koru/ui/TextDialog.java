@@ -18,6 +18,7 @@ public class TextDialog extends Dialog{
         label = cont.add(text).width(400).wrap().pad(20).get();
         label.setStyle(new LabelStyle(Skin.instance.getFont("markup-font"), Color.white));
         buttons.button("OK", this::hide).size(100, 50);
+        closeOnBack();
     }
 
     @Override

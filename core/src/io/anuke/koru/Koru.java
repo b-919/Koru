@@ -1,6 +1,8 @@
 package io.anuke.koru;
 
 import arc.*;
+import arc.math.*;
+import arc.scene.ui.layout.*;
 import arc.util.*;
 import io.anuke.koru.entities.*;
 import io.anuke.koru.graphics.*;
@@ -22,8 +24,20 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
 
     @Override
     public void init(){
+        if(Core.settings != null){
+            Core.settings.setAppName("Koru");
+            Core.settings.load();
+        }
+
         Core.camera = new arc.graphics.Camera();
         Core.batch = new arc.graphics.g2d.SpriteBatch();
+
+        if(Core.app.isMobile()){
+            float density = Core.graphics.getDensity();
+            float base = Math.max(Math.round((density / 1.5f) / 0.5f) * 0.5f, 1f);
+            Scl.setProduct(1f / base);
+        }
+
         LSystems.generate();
         try{
 
@@ -78,6 +92,7 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
         try{
             super.render();
             Entities.instance.update();
+            Core.settings.autosave();
         }catch(Exception e){
             handleException(e);
         }
@@ -86,7 +101,8 @@ public class Koru extends KoruModuleCore implements arc.ApplicationListener{
     static void handleException(Exception e){
         e.printStackTrace();
 
-        if(!System.getProperty("user.name").equals("anuke")){
+        String user = System.getProperty("user.name");
+        if(user == null || !user.equals("anuke")){
             Core.files.local("korulog-" + System.currentTimeMillis() + ".log").writeString(e.toString() + "\n" + java.util.Arrays.toString(e.getStackTrace()), false);
         }
         Core.app.exit();

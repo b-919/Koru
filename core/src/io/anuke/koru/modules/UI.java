@@ -13,6 +13,7 @@ import io.anuke.koru.items.*;
 import io.anuke.koru.modules.Control.*;
 import io.anuke.koru.traits.*;
 import io.anuke.koru.ui.*;
+import io.anuke.koru.ui.mobile.*;
 
 import static arc.Core.*;
 
@@ -30,6 +31,9 @@ public class UI extends SceneModule{
     private InventoryView inventory;
     private BlockView blockrecipes;
     private RecipeView recipes;
+
+    private MobileControls mobile;
+    private boolean mobileCraftOpen = false;
 
     private Boolp titlevis = () -> Koru.control.isState(GameState.title);
     private Boolp playvis = () -> Koru.control.isPlaying();
@@ -158,8 +162,14 @@ public class UI extends SceneModule{
         craftSubTable.add(stack).colspan(group.getButtons().size);
 
         craftTable.add(craftSubTable);
-        craftTable.visible(playvis);
+        craftTable.visible(() -> playvis.get() && (!Core.app.isMobile() || mobileCraftOpen));
         this.scene.add(craftTable);
+
+        //mobile touch controls
+        if(Core.app.isMobile()){
+            mobile = new MobileControls();
+            this.scene.add(mobile);
+        }
 
         //chat
         chat = new ChatView();
@@ -167,7 +177,48 @@ public class UI extends SceneModule{
         scene.add(chat);
     }
 
+    public MobileControls mobile(){
+        return mobile;
+    }
+
+    public float inventoryLeft(){
+        return inventory == null ? 0f : inventory.localToStageCoordinates(Tmp.v1.set(0, 0)).x;
+    }
+
+    public float inventoryWidth(){
+        return inventory == null ? 0f : inventory.getWidth();
+    }
+
+    public float inventoryTop(){
+        return inventory == null ? 0f : inventory.localToStageCoordinates(Tmp.v1.set(0, inventory.getHeight())).y;
+    }
+
+    public void toggleCraft(){
+        mobileCraftOpen = !mobileCraftOpen;
+    }
+
+    public void openChatInput(){
+        if(mobile == null || Core.scene.hasDialog()) return;
+
+        mobile.reset();
+        Koru.control.setState(GameState.chatting);
+
+        MobileTextDialog.show("Chat", "", "Message", 256, message -> {
+            chat.sendMessage(message);
+            Koru.control.setState(GameState.playing);
+        }, () -> Koru.control.setState(GameState.playing));
+    }
+
     public void toggleChat(){
+        if(Core.app.isMobile()){
+            if(Koru.control.isState(GameState.chatting)){
+                Koru.control.setState(GameState.playing);
+            }else{
+                openChatInput();
+            }
+            return;
+        }
+
         chat.toggle();
 
         if(chat.chatOpen()){
@@ -184,6 +235,10 @@ public class UI extends SceneModule{
     public void openPauseMenu(){
         if(pause == null){
             pause = new PauseDialog();
+        }
+
+        if(mobile != null){
+            mobile.reset();
         }
 
         pause.show();
@@ -228,6 +283,7 @@ public class UI extends SceneModule{
     public void leaveToTitle(){
         onDisconnected();
         closeMenu();
+        mobileCraftOpen = false;
 
         Koru.network.leaveServer();
         Koru.control.setState(GameState.title);

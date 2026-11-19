@@ -1,5 +1,6 @@
 package io.anuke.koru.ui;
 
+import arc.*;
 import arc.graphics.g2d.*;
 import arc.scene.*;
 import arc.scene.event.*;
@@ -16,10 +17,11 @@ import io.anuke.koru.traits.*;
 import io.anuke.koru.utils.*;
 
 public class RecipeView extends Table{
-    final int slotsize = 64;
+    final int slotsize = Core.app != null && Core.app.isMobile() ? 48 : 64;
     float pscale = slotsize/16;
     Slot selected;
     Button craftButton;
+    Label reqLabel;
 
     public RecipeView(){
         top().left();
@@ -34,8 +36,20 @@ public class RecipeView extends Table{
         craftButton = button("Craft", this::craft).colspan(Recipe.getAll().size).growX().height(40).padTop(6).get();
         craftButton.setDisabled(() -> selected == null || !Koru.control.player.inventory.hasAll(selected.recipe.requirements()));
 
+        if(Core.app != null && Core.app.isMobile()){
+            row();
+            reqLabel = new Label("Select an item");
+            add(reqLabel).colspan(Math.max(1, Recipe.getAll().size)).width(slotsize * Math.max(1, Recipe.getAll().size)).wrap().padTop(6).left();
+        }
+
         background(Skin.instance.get("button-window-bg", Drawable.class));
         margin(4);
+    }
+
+    void updateRequirements(){
+        if(reqLabel != null){
+            reqLabel.setText(selected == null ? "Select an item" : Recipe.formatRequirements(selected.recipe.requirements()));
+        }
     }
 
     void craft(){
@@ -61,6 +75,7 @@ public class RecipeView extends Table{
                 @Override
                 public void clicked(InputEvent event, float x, float y){
                     selected = Slot.this;
+                    updateRequirements();
                 }
             });
 
@@ -78,6 +93,7 @@ public class RecipeView extends Table{
                 }
             });
             tooltip.setInstant(true);
+            tooltip.allowMobile = true;
             addListener(tooltip);
         }
 

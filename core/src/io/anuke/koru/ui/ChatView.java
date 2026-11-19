@@ -35,6 +35,10 @@ public class ChatView extends Table{
         setFillParent(true);
         font = Skin.instance.get("pixel-font", Font.class);
 
+        if(Core.app.isMobile()){
+            offsety = 176;
+        }
+
         setup();
     }
 
@@ -110,7 +114,10 @@ public class ChatView extends Table{
     private void sendMessage(){
         String message = chatfield.getText();
         chatfield.clearText();
+        sendMessage(message);
+    }
 
+    public void sendMessage(String message){
         if(message.replaceAll(" ", "").isEmpty()) return;
 
         ChatPacket packet = new ChatPacket();

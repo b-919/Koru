@@ -2,6 +2,7 @@ package io.anuke.koru.modules;
 
 import arc.*;
 import arc.graphics.*;
+import arc.graphics.g2d.Lines;
 import arc.math.*;
 import arc.struct.*;
 import io.anuke.koru.*;
@@ -70,6 +71,7 @@ public class Renderer extends RendererModule{
         new ReflectionlessFacet(0, this::drawBlockOverlay).add();
         new ReflectionlessFacet(-Sorter.light - 1, this::drawTileOverlay).add();
         new ReflectionlessFacet(-Sorter.light - 1, this::drawSelectOverlay).add();
+        new ReflectionlessFacet(-Sorter.light - 2, this::drawMobileOutline).add();
     }
 
     @Override
@@ -163,9 +165,25 @@ public class Renderer extends RendererModule{
         }
     }
 
+    void drawMobileOutline(BaseFacet r){
+        if(!Core.app.isMobile() || !Koru.control.isMobileActing()) return;
+
+        int x = Koru.control.cursorX();
+        int y = Koru.control.cursorY();
+
+        if(Koru.world.getTile(x, y) == null) return;
+
+        float wx = World.world(x) - World.tilesize / 2f;
+        float wy = World.world(y) - World.tilesize / 2f;
+
+        Lines.stroke(2f, outlineColor);
+        Lines.rect(wx, wy, World.tilesize, World.tilesize);
+        Lines.stroke(1f);
+        arc.graphics.g2d.Draw.color();
+    }
+
     void drawSelectOverlay(BaseFacet r){
         if(Koru.ui.menuOpen()) return;
-
         Tile tile = Koru.world.getTile(Koru.control.cursorX(), Koru.control.cursorY());
         ItemStack stack = player.inventory.hotbarStack();
 
@@ -213,7 +231,6 @@ public class Renderer extends RendererModule{
 
     void drawTileOverlay(BaseFacet r){
         if(Koru.ui.menuOpen()) return;
-
         int x = Koru.control.cursorX();
         int y = Koru.control.cursorY();
 
