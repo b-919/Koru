@@ -7,6 +7,9 @@ import static io.anuke.koru.items.ItemType.*;
 
 public class Items{
 
+    public static void load(){
+    }
+
     public static final Item
 
     stick = new Item("stick"),
@@ -23,10 +26,9 @@ public class Items{
         {
             formalName = "Wooden Axe";
             breakSpeeds.put(BreakType.wood, 1);
-            breakSpeeds.put(BreakType.stone, 1);
         }
     },
-    pickaxe = new Item("woodpick", ItemType.tool){
+    pickaxe = new Item("woodpickaxe", ItemType.tool){
         {
             formalName = "Wooden Pickaxe";
             breakSpeeds.put(BreakType.stone, 1);

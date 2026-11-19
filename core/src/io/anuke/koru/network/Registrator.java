@@ -42,6 +42,7 @@ public class Registrator{
             MaterialRequestPacket.class,
             InventoryUpdatePacket.class,
             InventoryClickPacket.class,
+            CraftItemPacket.class,
             SlotChangePacket.class,
             RecipeSelectPacket.class,
             EntityRequestPacket.class,
@@ -95,6 +96,18 @@ public class Registrator{
         k.register(Material.class, new MaterialsSerializer());
         k.register(ItemStack.class, new ItemStackSerializer());
         k.register(Tile.class, new TileSerializer());
+    }
+
+    public static void registerChunks(Kryo k){
+        k.register(Chunk.class);
+        k.register(Material.class, new MaterialsSerializer());
+    }
+
+    public static void registerPlayers(Kryo k){
+        k.register(PlayerData.class);
+        k.register(PlayerData[].class);
+        k.register(PlayerSlot.class);
+        k.register(PlayerSlot[].class);
     }
 
     private static void register(Kryo k, Class<?>... classes){

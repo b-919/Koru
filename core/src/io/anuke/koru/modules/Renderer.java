@@ -26,6 +26,8 @@ public class Renderer extends RendererModule{
 
     private Player player;
     private FacetList[][] renderables = new FacetList[World.chunksize * World.loadrange * 2][World.chunksize * World.loadrange * 2];
+    private Seq<Facet> entityFacets = new Seq<>();
+    private Seq<EntityFacet> entityFacetCache = new Seq<>();
     private int lastcamx, lastcamy;
 
     public Renderer() {
@@ -133,15 +135,24 @@ public class Renderer extends RendererModule{
         }
 
         ShadowRenderer.draw();
-        Facets.instance().renderObjects();
 
+        entityFacets.clear();
         if(sorted != null){
-            for(Entity entity : sorted){
-                Draw.color();
-                entity.draw();
+            for(int i = 0; i < sorted.size; i++){
+                EntityFacet facet;
+                if(i < entityFacetCache.size){
+                    facet = entityFacetCache.get(i);
+                }else{
+                    facet = new EntityFacet();
+                    entityFacetCache.add(facet);
+                }
+
+                entityFacets.add(facet.set(sorted.get(i)));
             }
-            Draw.color();
         }
+
+        Facets.instance().renderObjects(entityFacets);
+        Draw.color();
 
         if(pixelate) endPixel();
 
@@ -238,6 +249,9 @@ public class Renderer extends RendererModule{
     }
 
     void drawBlockOverlay(BaseFacet r){
+        if(Koru.ui.menuOpen()){
+            return;
+        }
 
         int x = Koru.control.cursorX();
         int y = Koru.control.cursorY();
@@ -247,19 +261,25 @@ public class Renderer extends RendererModule{
         r.sort(Sorter.object);
 
         InventoryTrait inv = player.inventory;
-
         Tile tile = Koru.world.getTile(x, y);
 
-        if(inv.recipe != -1 && inv.hotbarStack() != null && inv.hotbarStack().item.isType(ItemType.placer)
-                && inv.hasAll(BlockRecipe.getRecipe(inv.recipe).requirements())){
+        if(tile == null || inv.recipe < 0){
+            return;
+        }
 
-            if(Mathf.dst(World.world(x), World.world(y), player.pos().x, player.pos().y) < InputHandler.reach && World.isPlaceable(BlockRecipe.getRecipe(inv.recipe).result(), tile)){
+        BlockRecipe recipe = BlockRecipe.getRecipe(inv.recipe);
+
+        if(recipe != null && inv.hotbarStack() != null && inv.hotbarStack().item.isType(ItemType.placer)
+                && inv.hasAll(recipe.requirements())){
+
+            if(Mathf.dst(World.world(x), World.world(y), player.pos().x, player.pos().y) < InputHandler.reach
+                    && World.isPlaceable(recipe.result(), tile)){
                 Draw.color(0.5f, 1f, 0.5f, 0.3f);
             }else{
                 Draw.color(1f, 0.5f, 0.5f, 0.3f);
             }
 
-            Material result = BlockRecipe.getRecipe(inv.recipe).result();
+            Material result = recipe.result();
 
             if(result.isLayer(MaterialLayer.floor)){
                 Draw.rect("blank", x*World.tilesize, y*World.tilesize, 12, 12);
@@ -352,6 +372,27 @@ public class Renderer extends RendererModule{
         camera.resize(width / scale, height / scale);
         ShadowRenderer.resize(width, height);
         LightRenderer.resize(width, height);
+    }
+
+    private static class EntityFacet extends ReflectionlessFacet{
+        private Entity entity;
+
+        EntityFacet(){
+            super(0f, null);
+        }
+
+        EntityFacet set(Entity entity){
+            this.entity = entity;
+            this.layer = entity.pos().y;
+            return this;
+        }
+
+        @Override
+        public void draw(){
+            Draw.color();
+            entity.draw();
+            Draw.color();
+        }
     }
 }
 

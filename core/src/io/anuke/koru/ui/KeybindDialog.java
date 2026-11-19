@@ -6,7 +6,8 @@ public class KeybindDialog extends Dialog{
 
     public KeybindDialog(){
         super("Controls");
-        addCloseButton();
+        buttons.button("Back", this::hide).size(100, 50);
+        closeOnBack();
     }
 }
 

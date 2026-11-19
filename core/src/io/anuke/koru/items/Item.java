@@ -18,7 +18,16 @@ public class Item{
     protected int stackSize = 100;
 
     public static Item getItem(int id){
-        return items.get(id);
+        return id < 0 || id >= items.size ? null : items.get(id);
+    }
+
+    public static Item getByName(String name){
+        for(Item item : items){
+            if(item.name.equals(name)){
+                return item;
+            }
+        }
+        return null;
     }
 
     public Item(String name, ItemType... types){

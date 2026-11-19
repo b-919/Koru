@@ -33,6 +33,11 @@ public class InputHandler{
 
         if(key(InputType.leftclickDown)){
             Tile tile = Koru.world.getTile(blockx, blocky);
+            if(tile == null){
+                blockhold = 0;
+                return;
+            }
+
             Material block = tile.wall();
             Material floor = tile.topFloor();
 
@@ -123,8 +128,8 @@ public class InputHandler{
 
             if(inv.recipe != -1) recipe = BlockRecipe.getRecipe(inv.recipe);
 
-            if(spark.pos.dst(World.world(blockx), World.world(blocky)) < reach
-                    && inv.recipe != -1 && inv.hasAll(recipe.requirements())
+            if(tile != null && recipe != null && spark.pos.dst(World.world(blockx), World.world(blocky)) < reach
+                    && inv.hasAll(recipe.requirements())
                     && World.isPlaceable(recipe.result(), tile)){
 
                 Effects.effect(Fx.blockplace, World.world(blockx), World.world(blocky));
@@ -146,7 +151,7 @@ public class InputHandler{
     private void onInteract(){
         Tile tile = Koru.world.getTile(blockx, blocky);
 
-        if(tile.wall().interactable()){
+        if(tile != null && tile.wall().interactable()){
             tile.wall().onInteract(tile, spark);
 
             Koru.world.updateTile(tile);

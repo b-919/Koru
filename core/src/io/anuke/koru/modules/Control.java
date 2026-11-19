@@ -55,8 +55,14 @@ public class Control extends KoruModule implements InputProcessor{
 
     @Override
     public void update() {
-        if(Core.input.keyTap(KeyCode.escape)) {
-            Core.app.exit();
+        if(Core.input.keyTap(KeyCode.escape)){
+            if(state == GameState.playing){
+                Koru.ui.openPauseMenu();
+            }else if(state == GameState.chatting){
+                Koru.ui.toggleChat();
+            }else if(state == GameState.menu && !Koru.ui.subMenuOpen()){
+                Koru.ui.resumeGame();
+            }
         }
 
         if(Core.input.keyTap(KeyCode.enter) && isPlaying()){

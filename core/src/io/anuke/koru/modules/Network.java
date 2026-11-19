@@ -37,6 +37,7 @@ public class Network extends KoruModule implements NetProvider{
     private Player player;
 
     private boolean connected;
+    private boolean leaving;
     private boolean chunksAdded = false;
     private IntSeq tempids = new IntSeq();
     private Seq<Entity> sparkQueue = new Seq<>();
@@ -74,6 +75,13 @@ public class Network extends KoruModule implements NetProvider{
                 }
 
                 Koru.world.time = data.time;
+                Koru.control.player.pos.set(data.playerx, data.playery);
+                if(data.direction != null){
+                    Koru.control.player.direction = data.direction;
+                }
+                if(data.name != null){
+                    Koru.control.player.name = data.name;
+                }
                 Koru.control.player.setID(data.playerid);
 
                 Entities.instance.addEntity(Koru.control.player);
@@ -120,6 +128,8 @@ public class Network extends KoruModule implements NetProvider{
 
         Net.handle(InventoryUpdatePacket.class, p -> {
             player.inventory.set(p.stacks, p.selected);
+            player.inventory.hotbar = p.hotbar;
+            player.inventory.recipe = p.recipe;
         });
 
         Net.handle(ChatPacket.class, p -> {
@@ -189,11 +199,26 @@ public class Network extends KoruModule implements NetProvider{
         }
     }
 
+    public void leaveServer(){
+        leaving = true;
+        connected = false;
+        connecting = false;
+
+        if(client.isConnected()){
+            client.close();
+        }else{
+            leaving = false;
+            clearWorld();
+        }
+    }
+
     private void disconnect(){
         connected = false;
         connecting = false;
-        Koru.ui.showError("Connection error: Timed out.");
+        clearWorld();
+    }
 
+    private void clearWorld(){
         for(int x = 0; x < world.chunks.length; x++){
             for(int y = 0; y < world.chunks[x].length; y++){
                 world.chunks[x][y] = null;
@@ -201,6 +226,11 @@ public class Network extends KoruModule implements NetProvider{
         }
 
         Entities.instance.clear();
+        sparkQueue.clear();
+        sparksToRemove.clear();
+        requestedEntities.clear();
+        tempids.clear();
+        chunksAdded = false;
     }
 
     @Override
@@ -332,8 +362,14 @@ public class Network extends KoruModule implements NetProvider{
         @Override
         public void disconnected(Connection connection, DcReason reason){
             Core.app.post(() -> {
+                boolean requested = leaving;
+                leaving = false;
+
                 disconnect();
-                Koru.ui.showError("Disconnected from server: " + reason);
+                Koru.ui.onDisconnected();
+                if(!requested){
+                    Koru.ui.showError("Disconnected from server: " + reason);
+                }
                 Koru.control.setState(GameState.title);
             });
         }

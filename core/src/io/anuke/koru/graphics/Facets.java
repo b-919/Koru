@@ -46,12 +46,25 @@ public class Facets{
 
     /** Draws walls, props and other object-layer facets. */
     public void renderObjects(){
+        renderObjects(null);
+    }
+
+    /** Draws object-layer facets together with extra facets sorted by depth. */
+    public void renderObjects(Seq<? extends Facet> extra){
         sort();
         renderBuffer.clear();
         for(int i = 0; i < facets.size; i++){
             Facet facet = facets.get(i);
             if(facet.provider != Sorter.tile) renderBuffer.add(facet);
         }
+
+        if(extra != null){
+            for(Facet facet : extra){
+                renderBuffer.add(facet);
+            }
+            renderBuffer.sort();
+        }
+
         draw(renderBuffer);
     }
 

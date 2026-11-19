@@ -36,7 +36,7 @@ public class BlockRecipe{
     }
 
     public static BlockRecipe getRecipe(int id){
-        return recipes.get(id);
+        return id < 0 || id >= recipes.size ? null : recipes.get(id);
     }
 
     public static Seq<BlockRecipe> getAll(){

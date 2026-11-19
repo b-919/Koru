@@ -14,6 +14,7 @@ public class ConnectDialog extends Dialog{
     public ConnectDialog(){
         super("Connect");
         setup();
+        closeOnBack();
     }
 
     private void setup(){

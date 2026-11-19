@@ -4,6 +4,7 @@ import arc.struct.*;
 import arc.util.*;
 import io.anuke.koru.*;
 import io.anuke.koru.entities.*;
+import io.anuke.koru.entities.types.*;
 import io.anuke.koru.modules.*;
 import io.anuke.koru.server.world.*;
 import io.anuke.koru.systems.*;
@@ -95,11 +96,30 @@ public class KoruUpdater{
         sync = new SyncSystem();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            savePlayers();
             saveAll();
+            file.closePlayerStore();
         }));
     }
 
     Object lock = new Object();
+
+    void savePlayers(){
+        if(Entities.instance != null){
+            for(Entity entity : new Seq<>(Entities.all())){
+                if(entity instanceof Player && entity.name != null){
+                    try{
+                        file.savePlayerData(PlayerData.create((Player)entity));
+                    }catch(Exception e){
+                        Koru.log("Failed to save player data for " + entity.name + "!");
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        file.flushPlayerData();
+    }
 
     void saveAll(){
         if(skipSave){

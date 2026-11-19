@@ -15,8 +15,7 @@ public class ChunkWriter{
 
     public ChunkWriter(){
         kryo = new Kryo();
-        kryo.register(Chunk.class);
-        kryo.register(Material.class, new Registrator.MaterialsSerializer());
+        Registrator.registerChunks(kryo);
     }
 
     public void writeChunk(Chunk chunk, Path path){

@@ -23,6 +23,7 @@ import io.anuke.koru.world.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.stream.*;
 
 public class KoruServer implements NetProvider{
     //maps connection IDs to entity IDs
@@ -48,6 +49,8 @@ public class KoruServer implements NetProvider{
 
         commands = new CommandHandler(this);
 
+        createUpdater();
+
         try{
             KryoSerialization serialization = new KryoSerialization();
             server = new Server(16384 * 256, 16384 * 256, serialization);
@@ -60,7 +63,6 @@ public class KoruServer implements NetProvider{
         }catch(Exception e){
             e.printStackTrace();
         }
-        createUpdater();
     }
 
     private void createUpdater(){
@@ -146,19 +148,56 @@ public class KoruServer implements NetProvider{
             inv.clickSlot(packet.index);
             inv.sendUpdate(player);
         });
+
+        Net.handle(CraftItemPacket.class, packet -> {
+            Player player = getPlayer(connection.getID());
+            if(player != null){
+                craftItem(player, packet.recipe);
+            }
+        });
+    }
+
+    private void craftItem(Player player, int recipeId){
+        Recipe recipe = Recipe.getRecipe(recipeId);
+        if(recipe == null){
+            return;
+        }
+
+        InventoryTrait inv = player.inventory;
+        if(!inv.hasAll(recipe.requirements())){
+            return;
+        }
+
+        inv.removeAll(recipe.requirements());
+
+        ItemStack remaining = inv.addItem(new ItemStack(recipe.result(), recipe.resultAmount()));
+        if(remaining != null && remaining.amount > 0){
+            ItemDrop.create(player.pos.x, player.pos.y, new ItemStack[]{remaining});
+        }
+
+        inv.sendUpdate(player);
     }
 
     public void connectPacketRecieved(ConnectPacket packet, Connection connection){
 
         try{
             Koru.log("Connect packet recieved...");
+            String name = uniqueName(packet.name);
+            PlayerData saved = updater.file.getPlayerData(name);
             Player player = new Player();
-
             player.connectionID = connection.getID();
-            player.name = packet.name;
+            player.name = name;
+            if(saved != null){
+                saved.apply(player);
+                Koru.log("Restored player data for " + name + ".");
+            }
 
             DataPacket data = new DataPacket();
             data.time = Koru.world.time;
+            data.playerx = player.pos.x;
+            data.playery = player.pos.y;
+            data.direction = player.direction;
+            data.name = name;
 
             ArrayList<Entity> entities = new ArrayList<Entity>();
 
@@ -174,24 +213,55 @@ public class KoruServer implements NetProvider{
             sendTo(connection.getID(), data, Mode.TCP);
             sendExcept(connection.getID(), player, Mode.TCP);
 
-            InventoryTrait inv = player.inventory;
-
-            inv.addItem(new ItemStack(Items.axe));
-            inv.addItem(new ItemStack(Items.hammer));
-            inv.addItem(new ItemStack(Items.stick, 10));
-            inv.addItem(new ItemStack(Items.stone, 10));
-            inv.sendUpdate(player);
+            if(saved == null){
+                initialItems(player);
+            }
+            player.inventory.sendUpdate(player);
 
             connections.put(connection.getID(), player.getID());
 
-            sendChatMessage("[GREEN]" + packet.name + " [CHARTREUSE]has connected.");
+            sendChatMessage("[GREEN]" + name + " [CHARTREUSE]has connected.");
             Koru.log("spark ID is " + player.getID() + ", connection ID is " + player.connectionID);
-            Koru.log(packet.name + " has joined.");
+            Koru.log(name + " has joined.");
         }catch(Exception e){
             e.printStackTrace();
             Koru.log("Critical error: failed sending player!");
             System.exit(1);
         }
+    }
+
+    public void initialItems(Player player){
+        InventoryTrait inv = player.inventory;
+        inv.addItem(new ItemStack(Items.axe));
+        inv.addItem(new ItemStack(Items.hammer));
+        inv.addItem(new ItemStack(Items.stick, 10));
+        inv.addItem(new ItemStack(Items.stone, 10));
+    }
+
+    private String uniqueName(String requested){
+        String base = requested == null ? "" : requested.trim();
+        if(base.isEmpty()){
+            base = "player";
+        }
+
+        if(!nameOnline(base)){
+            return base;
+        }
+
+        int number = 1;
+        while(nameOnline(base + number) || updater.file.hasPlayerData(base + number)){
+            number++;
+        }
+        return base + number;
+    }
+
+    private boolean nameOnline(String name){
+        for(Entity entity : Entities.all()){
+            if(entity instanceof Player && name.equals(entity.name)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public void disconnected(int id){
@@ -202,6 +272,15 @@ public class KoruServer implements NetProvider{
             }
 
             Player player = getPlayer(id);
+
+            if(player != null){
+                try{
+                    updater.file.savePlayerData(PlayerData.create(player));
+                }catch(Exception e){
+                    Koru.log("Failed to save player data for " + player.name + "!");
+                    e.printStackTrace();
+                }
+            }
 
             sendChatMessage("[GREEN]" + player.name + " [CORAL]has disconnected.");
             Koru.log(player.name + " has disconnected.");
@@ -311,18 +390,20 @@ public class KoruServer implements NetProvider{
 
         if(arglist.contains("-clearworld")){
             Koru.log("Clearing world.");
-            try(DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get("world"))){
-                for(Path path : stream){
-                    try{
-                        Files.delete(path);
-                    }catch(IOException e){
-                        e.printStackTrace();
-                    }
+            Path world = Paths.get("world");
+            if(Files.exists(world)){
+                try(Stream<Path> stream = Files.walk(world)){
+                    stream.sorted(Comparator.reverseOrder()).forEach(path -> {
+                        try{
+                            Files.delete(path);
+                        }catch(IOException e){
+                            e.printStackTrace();
+                        }
+                    });
+                }catch(IOException e){
+                    e.printStackTrace();
                 }
-            }catch(IOException e){
-                e.printStackTrace();
             }
-
         }
 
         KoruServer server = new KoruServer();

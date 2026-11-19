@@ -12,6 +12,7 @@ public class Resources{
     private static Font font;
 
     public static void loadData(){
+        Items.load();
         Materials.load();
         BlockRecipes.load();
         Recipes.load();

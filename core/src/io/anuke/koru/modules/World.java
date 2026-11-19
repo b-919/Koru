@@ -343,6 +343,9 @@ public class World extends KoruModule{
     }
 
     public static boolean isPlaceable(Material material, Tile tile){
+        if(tile == null){
+            return false;
+        }
 
         if(!material.isLayer(MaterialLayer.floor)){
             return tile.isWallEmpty();

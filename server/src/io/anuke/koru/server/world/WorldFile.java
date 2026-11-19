@@ -24,6 +24,7 @@ public class WorldFile extends WorldLoader{
     private StructureGenerator structGenerator;
     private ChunkWriter[] writers = new ChunkWriter[Runtime.getRuntime().availableProcessors()];
     private Object lock = new Object();
+    private PlayerStore playerStore;
     private boolean debug;
 
     public WorldFile(Path file, Generator generator, StructureGenerator structGenerator) {
@@ -37,11 +38,11 @@ public class WorldFile extends WorldLoader{
         }
 
         kryo = new Kryo();
-        kryo.register(Chunk.class);
-        kryo.register(Material.class, new Registrator.MaterialsSerializer());
+        Registrator.registerChunks(kryo);
         this.file = file;
         this.generator = generator;
         this.structGenerator = structGenerator;
+        this.playerStore = new PlayerStore(file.resolve("players"));
 
         try(DirectoryStream<Path> stream = Files.newDirectoryStream(file)){
             for(Path path : stream){
@@ -68,11 +69,10 @@ public class WorldFile extends WorldLoader{
     public void writeChunk(Chunk chunk, int writer){
         Path path = Paths.get(file.toString(), "/" + fileName(chunk.x, chunk.y));
 
-        while(!writers[writer].writing()){ // to prevent screwups with multiple threads using writer 0
+        synchronized(writers[writer]){
             writers[writer].writeChunk(chunk, path);
-            files.put(path.getFileName().toString(), path);
-            return;
         }
+        files.put(path.getFileName().toString(), path);
     }
 
     public Chunk readChunk(int x, int y){
@@ -149,6 +149,29 @@ public class WorldFile extends WorldLoader{
 
     public Collection<Chunk> getLoadedChunks(){
         return loadedchunks.values();
+    }
+
+    public boolean hasPlayerData(String name){
+        return playerStore.has(name);
+    }
+
+    /** Returns the saved data for a player, if any. */
+    public PlayerData getPlayerData(String name){
+        return playerStore.load(name);
+    }
+
+    /** Queues the player's current position and inventory for writing. */
+    public void savePlayerData(PlayerData data){
+        playerStore.save(data);
+    }
+
+    /** Writes all queued player data to disk. */
+    public void flushPlayerData(){
+        playerStore.flush();
+    }
+
+    public void closePlayerStore(){
+        playerStore.close();
     }
 
     public String fileName(int x, int y){

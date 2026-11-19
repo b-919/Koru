@@ -65,6 +65,8 @@ public class InventoryTrait{
         InventoryUpdatePacket update = new InventoryUpdatePacket();
         update.selected = selected;
         update.stacks = inventory;
+        update.hotbar = hotbar;
+        update.recipe = recipe;
         Net.sendTo(entity.connectionID, update);
     }
 

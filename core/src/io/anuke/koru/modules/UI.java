@@ -25,6 +25,7 @@ public class UI extends SceneModule{
     private ConnectDialog connect;
     private io.anuke.koru.ui.KeybindDialog keybinds;
     private SettingsDialog settings;
+    private PauseDialog pause;
 
     private InventoryView inventory;
     private BlockView blockrecipes;
@@ -45,6 +46,7 @@ public class UI extends SceneModule{
         connect = new ConnectDialog();
         settings = new SettingsDialog();
         keybinds = new io.anuke.koru.ui.KeybindDialog();
+        pause = new PauseDialog();
         chat = new ChatView();
 
         settings.checkPref("smoothcam", "Smooth Camera", true);
@@ -67,6 +69,8 @@ public class UI extends SceneModule{
         titleTable.button("Settings", settings::show);
         titleTable.row();
         titleTable.button("Controls", keybinds::show);
+        titleTable.row();
+        titleTable.button("Quit", () -> Core.app.exit());
 
         titleTable.visible(titlevis);
         scene.add(titleTable);
@@ -177,12 +181,64 @@ public class UI extends SceneModule{
         connect.hide();
     }
 
+    public void openPauseMenu(){
+        if(pause == null){
+            pause = new PauseDialog();
+        }
+
+        pause.show();
+        Koru.control.setState(GameState.menu);
+    }
+
+    public void resumeGame(){
+        if(pause != null){
+            pause.hide(null);
+        }
+        Koru.control.setState(GameState.playing);
+    }
+
+    public void onPauseClosed(){
+        Koru.control.setState(GameState.playing);
+    }
+
+    public boolean subMenuOpen(){
+        return (settings != null && settings.isShown()) || (keybinds != null && keybinds.isShown());
+    }
+
+    public void showSettings(){
+        settings.show();
+    }
+
+    public void showControls(){
+        keybinds.show();
+    }
+
+    public void onDisconnected(){
+        if(pause != null){
+            pause.hide(null);
+        }
+        settings.hide(null);
+        keybinds.hide(null);
+
+        if(Koru.control != null && Koru.control.player != null && Koru.control.player.inventory != null){
+            Koru.control.player.inventory.recipe = -1;
+        }
+    }
+
+    public void leaveToTitle(){
+        onDisconnected();
+        closeMenu();
+
+        Koru.network.leaveServer();
+        Koru.control.setState(GameState.title);
+    }
+
     public void handleChatMessage(String message, String sender){
         chat.addMessage(message, sender);
     }
 
     public boolean menuOpen(){
-        return scene.hasMouse() || currentMenu != null || chat.chatOpen();
+        return scene.hasMouse() || currentMenu != null || chat.chatOpen() || (pause != null && pause.isShown());
     }
 
     public void showError(String... lines){

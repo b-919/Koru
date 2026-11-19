@@ -7,6 +7,7 @@ public class SettingsDialog extends Dialog{
     public SettingsDialog(){
         super("Settings");
         buttons.button("Back", this::hide).size(100, 50);
+        closeOnBack();
     }
 
     public void checkPref(String name, String title, boolean def){
